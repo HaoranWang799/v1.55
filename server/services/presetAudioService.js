@@ -1,8 +1,9 @@
 import { existsSync } from 'fs'
-import { mkdir, readdir, stat, writeFile } from 'fs/promises'
+import { mkdir, readdir, readFile, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { textToSpeech } from '../providers/fishAudioProvider.js'
 import { getPresetVoiceScene } from '../data/presetVoiceScenes.js'
+import { generateScriptText } from './scriptService.js'
 
 const AUDIO_DIR = process.env.PRESET_AUDIO_DIR
   || process.env.AUDIO_STORAGE_DIR
@@ -57,11 +58,15 @@ async function ensureSchema(pool) {
         lang TEXT NOT NULL DEFAULT 'zh',
         file_name TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
+        script_json JSONB,
         enabled BOOLEAN NOT NULL DEFAULT TRUE,
         generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
-    `).catch((err) => {
+    `).then(() => pool.query(`
+      ALTER TABLE preset_audio_packages
+      ADD COLUMN IF NOT EXISTS script_json JSONB
+    `)).catch((err) => {
       schemaReadyPromise = null
       throw err
     })
@@ -85,23 +90,24 @@ async function getAudioRecord(audioKey) {
   }
 }
 
-async function saveAudioRecord({ audioKey, presetId, lang, fileName, version }) {
+async function saveAudioRecord({ audioKey, presetId, lang, fileName, version, scriptJson }) {
   try {
     const pool = await getPool()
     if (!pool) return
     await ensureSchema(pool)
     await pool.query(
       `
-        INSERT INTO preset_audio_packages (audio_key, preset_id, lang, file_name, version, enabled, generated_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NOW())
+        INSERT INTO preset_audio_packages (audio_key, preset_id, lang, file_name, version, script_json, enabled, generated_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), NOW())
         ON CONFLICT (audio_key)
         DO UPDATE SET
           file_name = EXCLUDED.file_name,
           version = EXCLUDED.version,
+          script_json = EXCLUDED.script_json,
           enabled = TRUE,
           updated_at = NOW()
       `,
-      [audioKey, presetId, lang, fileName, version]
+      [audioKey, presetId, lang, fileName, version, JSON.stringify(scriptJson)]
     )
   } catch (err) {
     console.warn(`⚠️ [PresetAudio] 写入 PostgreSQL 记录失败，音频文件已保存在 Volume: ${err.message}`)
@@ -122,6 +128,28 @@ function versionFromFileName(fileName) {
   return match ? Number(match[1]) : 0
 }
 
+function getMetaFileName(fileName) {
+  return fileName.replace(/\.mp3$/, '.json')
+}
+
+async function readAudioMetadata(fileName) {
+  try {
+    const body = await readFile(join(AUDIO_DIR, getMetaFileName(fileName)), 'utf8')
+    return JSON.parse(body)
+  } catch {
+    return null
+  }
+}
+
+function getStoredCharacter(metadata) {
+  if (!metadata) return null
+  if (metadata.character) return metadata.character
+  if (metadata.name || metadata.openingLine || metadata.personalityTag || metadata.gradient) {
+    return metadata
+  }
+  return null
+}
+
 async function findLatestAudioFile(audioKey) {
   if (!existsSync(AUDIO_DIR)) return null
   const files = await readdir(AUDIO_DIR).catch(() => [])
@@ -135,7 +163,10 @@ async function findLatestAudioFile(audioKey) {
     .sort((a, b) => b.version - a.version)
 
   for (const match of matches) {
-    if (await fileExists(match.filePath)) return match
+    if (await fileExists(match.filePath)) {
+      const metadata = await readAudioMetadata(match.fileName)
+      return { ...match, scriptJson: metadata }
+    }
   }
   return null
 }
@@ -149,6 +180,7 @@ async function getCurrentAudioFile(audioKey) {
         fileName: record.file_name,
         version: Number(record.version) || versionFromFileName(record.file_name),
         filePath,
+        scriptJson: record.script_json || await readAudioMetadata(record.file_name),
       }
     }
   }
@@ -160,10 +192,11 @@ async function getNextVersion(audioKey) {
   return (current?.version || 0) + 1
 }
 
-function buildPresetScript(scene, lang, cached) {
+function buildPresetScript(scene, lang, cached, character = null) {
   const text = getVoiceText(scene, lang)
   const role = getVoiceRole(scene, lang)
   const title = getVoiceTitle(scene, lang)
+  const generated = character || {}
 
   return {
     id: `preset-${scene.id}`,
@@ -172,20 +205,20 @@ function buildPresetScript(scene, lang, cached) {
     sceneId: scene.sceneId,
     cover: scene.coverEmoji,
     coverEmoji: scene.coverEmoji,
-    name: title,
+    name: generated.name || title,
     nameEn: scene.titleEn,
-    title,
+    title: generated.name || title,
     titleEn: scene.titleEn,
     tag: lang === 'en' ? 'Preset Voice' : '固定语音',
     tagEn: 'Preset Voice',
-    personalityTag: role,
+    personalityTag: generated.personalityTag || role,
     personalityTagEn: scene.roleEn,
-    openingLine: text,
+    openingLine: generated.openingLine || text,
     openingLineEn: scene.textEn,
     downloads: lang === 'en' ? 'Ready' : '已缓存',
     downloadsEn: 'Ready',
     rating: null,
-    gradient: scene.gradient,
+    gradient: generated.gradient || scene.gradient,
     isAIGenerated: true,
     isPresetVoice: true,
     isFree: true,
@@ -207,8 +240,13 @@ export async function preparePresetVoiceAudio(presetId, options = {}) {
 
   if (!options.force) {
     const current = await getCurrentAudioFile(audioKey)
-    if (current) {
-      return { ok: true, cached: true, script: buildPresetScript(scene, lang, true) }
+    const storedCharacter = getStoredCharacter(current?.scriptJson)
+    if (current && storedCharacter) {
+      return {
+        ok: true,
+        cached: true,
+        script: buildPresetScript(scene, lang, true, storedCharacter),
+      }
     }
   }
 
@@ -216,12 +254,23 @@ export async function preparePresetVoiceAudio(presetId, options = {}) {
   const version = await getNextVersion(audioKey)
   const fileName = `${audioKey}_v${version}.mp3`
   const filePath = join(AUDIO_DIR, fileName)
+  const metadataPath = join(AUDIO_DIR, getMetaFileName(fileName))
 
-  const audioBase64 = await textToSpeech(getVoiceText(scene, lang))
+  const sourcePrompt = getVoiceText(scene, lang)
+  const { character } = await generateScriptText(sourcePrompt)
+  const audioBase64 = await textToSpeech(character.openingLine)
+  const scriptJson = {
+    presetId: scene.id,
+    lang,
+    sourcePrompt,
+    character,
+    generatedAt: new Date().toISOString(),
+  }
   await writeFile(filePath, Buffer.from(audioBase64, 'base64'))
-  await saveAudioRecord({ audioKey, presetId: scene.id, lang, fileName, version })
+  await writeFile(metadataPath, JSON.stringify(scriptJson, null, 2), 'utf8')
+  await saveAudioRecord({ audioKey, presetId: scene.id, lang, fileName, version, scriptJson })
 
-  return { ok: true, cached: false, script: buildPresetScript(scene, lang, false) }
+  return { ok: true, cached: false, script: buildPresetScript(scene, lang, false, character) }
 }
 
 export async function getPresetVoiceAudioStream(presetId, options = {}) {
