@@ -225,6 +225,78 @@ export const PRESET_VOICE_SCENES = [
   },
 ]
 
+const PRESET_COVER_IMAGES = {
+  hot_01: {
+    freeCoverImage: '/images/covers/boss.jpg',
+    vipCoverImage: '/images/covers/s1.jpg',
+  },
+  hot_02: {
+    freeCoverImage: '/images/covers/junior.jpg',
+    vipCoverImage: '/images/covers/h6.jpg',
+  },
+  hot_03: {
+    freeCoverImage: '/images/covers/rb6.jpg',
+    vipCoverImage: '/images/covers/ex5.jpg',
+  },
+  hot_04: {
+    freeCoverImage: '/images/covers/neighbor.jpg',
+    vipCoverImage: '/images/covers/rb2.jpg',
+  },
+  office_01: {
+    freeCoverImage: '/images/covers/ex1.jpg',
+    vipCoverImage: '/images/covers/o4.jpg',
+  },
+  office_02: {
+    freeCoverImage: '/images/scripts/s1.jpg',
+    vipCoverImage: '/images/covers/fs2.jpg',
+  },
+  office_03: {
+    freeCoverImage: '/images/scripts/s2.jpg',
+    vipCoverImage: '/images/scripts/s3.jpg',
+  },
+  office_04: {
+    freeCoverImage: '/images/covers/rb1.jpg',
+    vipCoverImage: '/images/covers/ex2.jpg',
+  },
+  campus_01: {
+    freeCoverImage: '/images/covers/u5.jpg',
+    vipCoverImage: '/images/covers/r3.jpg',
+  },
+  campus_02: {
+    freeCoverImage: '/images/covers/r2.jpg',
+    vipCoverImage: '/images/covers/rb5.jpg',
+  },
+  campus_03: {
+    freeCoverImage: '/images/covers/h5.jpg',
+    vipCoverImage: '/images/covers/rb4.jpg',
+  },
+  campus_04: {
+    freeCoverImage: '/images/covers/rb3.jpg',
+    vipCoverImage: '/images/covers/o6.jpg',
+  },
+  fantasy_01: {
+    freeCoverImage: '/images/covers/fs3.jpg',
+    vipCoverImage: '/images/covers/o2.jpg',
+  },
+  fantasy_02: {
+    freeCoverImage: '/images/covers/witch.jpg',
+    vipCoverImage: '/images/covers/fs4.jpg',
+  },
+  fantasy_03: {
+    freeCoverImage: '/images/covers/teacher.jpg',
+    vipCoverImage: '/images/covers/fs5.jpg',
+  },
+  fantasy_04: {
+    freeCoverImage: '/images/covers/ex3.jpg',
+    vipCoverImage: '/images/covers/ex4.jpg',
+  },
+}
+
 export function getPresetVoiceScene(presetId) {
-  return PRESET_VOICE_SCENES.find((scene) => scene.id === presetId) || null
+  const scene = PRESET_VOICE_SCENES.find((item) => item.id === presetId)
+  if (!scene) return null
+  return {
+    ...scene,
+    ...(PRESET_COVER_IMAGES[presetId] || {}),
+  }
 }

@@ -126,7 +126,12 @@ export function GeneratedScriptCard({ script, onClick }) {
   const L = useL()
   const d = (item, field) => (lang === 'en' && item?.[field + 'En']) || item?.[field]
   const coverKey = script.charId || script.id
-  const [imgSrc, setImgSrc] = useState(`/images/covers/${coverKey}.jpg`)
+  const defaultCoverImage = `/images/covers/${coverKey}.jpg`
+  const [imgSrc, setImgSrc] = useState(script.coverImage || defaultCoverImage)
+
+  useEffect(() => {
+    setImgSrc(script.coverImage || defaultCoverImage)
+  }, [script.coverImage, defaultCoverImage])
 
   return (
     <button
@@ -138,7 +143,8 @@ export function GeneratedScriptCard({ script, onClick }) {
           src={imgSrc}
           alt=""
           onError={() => {
-            if (imgSrc.endsWith('.jpg')) setImgSrc(`/images/covers/${coverKey}.png`)
+            if (script.coverImage && imgSrc === script.coverImage && imgSrc !== defaultCoverImage) setImgSrc(defaultCoverImage)
+            else if (imgSrc.endsWith('.jpg')) setImgSrc(`/images/covers/${coverKey}.png`)
             else setImgSrc(null)
           }}
           className="absolute inset-0 w-full h-full object-cover"

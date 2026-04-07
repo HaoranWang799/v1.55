@@ -224,6 +224,8 @@ function buildPresetScript(scene, lang, cached, character = null) {
     isFree: true,
     audioUrl: getStreamUrl(scene.id, lang),
     audioCached: cached,
+    freeCoverImage: scene.freeCoverImage || '',
+    vipCoverImage: scene.vipCoverImage || '',
   }
 }
 

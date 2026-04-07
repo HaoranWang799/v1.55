@@ -802,11 +802,13 @@ export default function HomePage() {
             ...presetScript,
             id: `${presetScript.id}-free-${ts}`,
             isFree: true,
+            coverImage: presetScript.freeCoverImage,
           },
           {
             ...presetScript,
             id: `${presetScript.id}-vip-${ts}`,
             isFree: false,
+            coverImage: presetScript.vipCoverImage,
           },
         ])
         setGenProgress(100)
