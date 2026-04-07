@@ -1,7 +1,7 @@
 /**
  * 剧本卡片组件（从 HomePage.jsx 提取）
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useL } from '../../i18n/useL'
@@ -15,10 +15,39 @@ export function ScriptCard({ script, onClick }) {
   const L = useL()
   const d = (item, field) => (lang === 'en' && item?.[field + 'En']) || item?.[field]
   const isVideo = CARD_VIDEO_IDS.includes(script.id)
+  const videoRef = useRef(null)
   const coverVersion = script.id === 'boss' ? '20260408a' : '1'
   const coverJpg = `/images/covers/${script.id}.jpg?v=${coverVersion}`
   const coverPng = `/images/covers/${script.id}.png?v=${coverVersion}`
   const [imgSrc, setImgSrc] = useState(coverJpg)
+
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return
+
+    const v = videoRef.current
+    v.load()
+
+    const tryPlay = () => {
+      const p = v.play()
+      if (p && typeof p.catch === 'function') p.catch(() => {})
+    }
+
+    tryPlay()
+
+    const onFirstGesture = () => {
+      tryPlay()
+      window.removeEventListener('touchstart', onFirstGesture)
+      window.removeEventListener('pointerdown', onFirstGesture)
+    }
+
+    window.addEventListener('touchstart', onFirstGesture, { passive: true })
+    window.addEventListener('pointerdown', onFirstGesture, { passive: true })
+
+    return () => {
+      window.removeEventListener('touchstart', onFirstGesture)
+      window.removeEventListener('pointerdown', onFirstGesture)
+    }
+  }, [isVideo])
 
   return (
     <button
@@ -27,6 +56,7 @@ export function ScriptCard({ script, onClick }) {
     >
       {isVideo && (
         <video
+          ref={videoRef}
           autoPlay loop muted playsInline
           preload="auto"
           poster={coverJpg}
