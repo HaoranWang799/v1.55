@@ -832,7 +832,7 @@ const SCRIPTS = [
     title: '面具舞会·双面陷阱', persona: 'teacher',   intensity: 'deep',  duration: 'm', tab: 'vip',
     rating: 4.9, reviews: '2.1k', badge: '🔒 专属', badgeColor: 'bg-[#A87CFF]/30 text-[#C9A0FF]',
     price: { type: 'diamonds', amount: 180, memberAmount: 0, label: '👑 会员专享' } },
-  { id: 's11', emoji: '🌺', bgFrom: '#280a20', bgTo: '#380f30', bgImage: '/images/scripts/s11.jpg',
+  { id: 's11', emoji: '🌺', bgFrom: '#280a20', bgTo: '#380f30', bgImage: '/images/scripts/s11.jpg?v=20260408b',
     title: '花魁·深宫独宠夜', persona: 'shaofu',     intensity: 'deep',  duration: 'm', tab: 'hot',
     rating: 4.8, reviews: '3.5k', badge: '🌸 古风', badgeColor: 'bg-pink-500/25 text-pink-300',
     price: { type: 'coins', amount: 880, memberAmount: 704, label: '💰 880' } },
