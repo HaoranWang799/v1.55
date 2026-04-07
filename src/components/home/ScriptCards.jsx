@@ -15,7 +15,10 @@ export function ScriptCard({ script, onClick }) {
   const L = useL()
   const d = (item, field) => (lang === 'en' && item?.[field + 'En']) || item?.[field]
   const isVideo = CARD_VIDEO_IDS.includes(script.id)
-  const [imgSrc, setImgSrc] = useState(`/images/covers/${script.id}.jpg`)
+  const coverVersion = script.id === 'boss' ? '20260408a' : '1'
+  const coverJpg = `/images/covers/${script.id}.jpg?v=${coverVersion}`
+  const coverPng = `/images/covers/${script.id}.png?v=${coverVersion}`
+  const [imgSrc, setImgSrc] = useState(coverJpg)
 
   return (
     <button
@@ -26,7 +29,7 @@ export function ScriptCard({ script, onClick }) {
         <video
           autoPlay loop muted playsInline
           preload="auto"
-          poster={`/images/covers/${script.id}.jpg`}
+          poster={coverJpg}
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src={`/videos/${script.id}.mp4`} type="video/mp4" />
@@ -38,7 +41,7 @@ export function ScriptCard({ script, onClick }) {
           src={imgSrc}
           alt=""
           onError={() => {
-            if (imgSrc.endsWith('.jpg')) setImgSrc(`/images/covers/${script.id}.png`)
+            if (imgSrc.includes('.jpg')) setImgSrc(coverPng)
             else setImgSrc(null)
           }}
           className="absolute inset-0 w-full h-full object-cover"

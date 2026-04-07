@@ -1293,7 +1293,7 @@ export default function HomePage() {
                 <video
                   src={`/videos/${activeScript.charId}.mp4`}
                   autoPlay loop muted playsInline
-                  poster={`/images/covers/${activeScript.charId}.jpg`}
+                  poster={`/images/covers/${activeScript.charId}.jpg?v=${activeScript.charId === 'boss' ? '20260408a' : '1'}`}
                   onError={() => setBgType('image')}
                   className="absolute inset-0 w-full h-full object-cover opacity-35"
                 />
@@ -1301,11 +1301,11 @@ export default function HomePage() {
               {/* 第二优先：图片背景（视频加载失败时，jpg → png → emoji 链式回退） */}
               {bgType === 'image' && (
                 <img
-                  src={`/images/covers/${activeScript.charId}.jpg`}
+                  src={`/images/covers/${activeScript.charId}.jpg?v=${activeScript.charId === 'boss' ? '20260408a' : '1'}`}
                   alt=""
                   onError={(e) => {
-                    if (e.target.src.endsWith('.jpg')) {
-                      e.target.src = `/images/covers/${activeScript.charId}.png`
+                    if (e.target.src.includes('.jpg')) {
+                      e.target.src = `/images/covers/${activeScript.charId}.png?v=${activeScript.charId === 'boss' ? '20260408a' : '1'}`
                     } else {
                       setBgType('emoji')
                     }
