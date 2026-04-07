@@ -38,6 +38,10 @@ function resolveApiUrl(path) {
   return base ? `${base}${path.startsWith('/') ? path : `/${path}`}` : path
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 // ── 输入提示词数据 ─────────────────────────────────
 const PROMPT_TABS = {
   zh: [
@@ -779,16 +783,32 @@ export default function HomePage() {
       if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
 
       genTimerRef.current = setInterval(() => {
-        setGenProgress((p) => Math.min(p + 10, 90))
-      }, 1000)
+        setGenProgress((p) => Math.min(p + 9, 90))
+      }, 350)
 
       try {
-        const result = await preparePresetVoiceAudio(selectedPreset.id, { lang })
+        const [result] = await Promise.all([
+          preparePresetVoiceAudio(selectedPreset.id, { lang }),
+          wait(3500),
+        ])
         clearInterval(genTimerRef.current)
         genTimerRef.current = null
         if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
         ttsReadyRef.current = true
-        setGeneratedScripts([result.script])
+        const ts = Date.now()
+        const presetScript = result.script
+        setGeneratedScripts([
+          {
+            ...presetScript,
+            id: `${presetScript.id}-free-${ts}`,
+            isFree: true,
+          },
+          {
+            ...presetScript,
+            id: `${presetScript.id}-vip-${ts}`,
+            isFree: false,
+          },
+        ])
         setGenProgress(100)
         setGenPhase('done')
       } catch (err) {
