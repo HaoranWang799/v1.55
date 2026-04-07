@@ -22,7 +22,7 @@ import { CharSelectCard, SceneSelectCard } from '../components/home/SelectCards'
 import { Waveform, HeartRain, SliderControl } from '../components/home/InteractWidgets'
 import { CHARACTERS } from '../data/characters'
 import { SCENES } from '../data/scenes'
-import { SCRIPTS, SCRIPT_DESCRIPTIONS, BG_VIDEO_IDS } from '../data/scripts'
+import { SCRIPTS, SCRIPT_DESCRIPTIONS, SCRIPT_DESCRIPTIONS_EN, BG_VIDEO_IDS } from '../data/scripts'
 import { PRESETS, TOTAL_SECONDS, pick, formatTime, generateHearts } from '../data/interactData'
 import {
   generateScriptText as generateScriptTextApi,
@@ -1625,20 +1625,20 @@ export default function HomePage() {
               <span className="text-4xl select-none leading-none">{displayEmoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-bold text-[rgba(245,240,242,0.95)] leading-snug mb-0.5">
-                  {activeScript.name}
+                  {d(activeScript, 'name')}
                 </p>
                 <span className="text-[10px] bg-[rgba(255,154,203,0.15)] text-[#FF9ACB] rounded-full px-2 py-0.5">
-                  {activeScript.tag}
+                  {d(activeScript, 'tag')}
                 </span>
               </div>
             </div>
 
             {/* 剧本简介长文案 */}
-            {activeChar && SCRIPT_DESCRIPTIONS[activeChar.id] && (
+            {activeChar && ((lang === 'en' && SCRIPT_DESCRIPTIONS_EN[activeChar.id]) || SCRIPT_DESCRIPTIONS[activeChar.id]) && (
               <div className="rounded-2xl p-4 mb-3 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.07)]">
                 <p className="text-[9px] text-[rgba(245,240,242,0.35)] tracking-widest mb-2">{L('剧本简介', 'Synopsis')}</p>
                 <p className="text-[11px] text-[rgba(245,240,242,0.72)] leading-relaxed">
-                  {SCRIPT_DESCRIPTIONS[activeChar.id]}
+                  {(lang === 'en' && SCRIPT_DESCRIPTIONS_EN[activeChar.id]) || SCRIPT_DESCRIPTIONS[activeChar.id]}
                 </p>
               </div>
             )}
