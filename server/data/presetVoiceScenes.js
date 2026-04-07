@@ -232,7 +232,7 @@ const PRESET_COVER_IMAGES = {
   },
   hot_02: {
     freeCoverImage: '/images/covers/junior.jpg',
-    vipCoverImage: '/images/covers/h6.jpg',
+    vipCoverImage: '/images/covers/r2.jpg',
   },
   hot_03: {
     freeCoverImage: '/images/covers/rb6.jpg',
@@ -251,7 +251,7 @@ const PRESET_COVER_IMAGES = {
     vipCoverImage: '/images/covers/fs2.jpg',
   },
   office_03: {
-    freeCoverImage: '/images/scripts/s2.jpg',
+    freeCoverImage: '/images/posts/h3.jpg',
     vipCoverImage: '/images/scripts/s3.jpg',
   },
   office_04: {
@@ -263,7 +263,7 @@ const PRESET_COVER_IMAGES = {
     vipCoverImage: '/images/covers/r3.jpg',
   },
   campus_02: {
-    freeCoverImage: '/images/covers/r2.jpg',
+    freeCoverImage: '/images/scripts/s2.jpg',
     vipCoverImage: '/images/covers/rb5.jpg',
   },
   campus_03: {
