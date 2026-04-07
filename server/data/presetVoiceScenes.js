@@ -228,7 +228,7 @@ export const PRESET_VOICE_SCENES = [
 const PRESET_COVER_IMAGES = {
   hot_01: {
     freeCoverImage: '/images/covers/boss.jpg',
-    vipCoverImage: '/images/covers/ex1.jpg',
+    vipCoverImage: '/images/covers/preset-hot-01-vip.jpg',
   },
   hot_02: {
     freeCoverImage: '/images/covers/junior.jpg',
