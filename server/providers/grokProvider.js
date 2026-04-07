@@ -11,7 +11,17 @@ function clampText(value, max = 220) {
 }
 
 function normalizeMood(value) {
-  return ['暧昧', '温柔', '调皮'].includes(value) ? value : '温柔'
+  const mood = String(value || '').trim().toLowerCase()
+  const moodMap = {
+    flirty: '暧昧',
+    teasing: '暧昧',
+    intimate: '暧昧',
+    gentle: '温柔',
+    warm: '温柔',
+    tender: '温柔',
+    playful: '调皮',
+  }
+  return ['暧昧', '温柔', '调皮'].includes(value) ? value : (moodMap[mood] || '温柔')
 }
 
 function normalizeList(items, mapper, min = 0, max = Infinity) {
@@ -34,6 +44,7 @@ export async function generateLoverMessage(promptPayload, apiKeyOverride = '') {
     return {
       text: clampText(result.text),
       mood: normalizeMood(result.mood),
+      lang: promptPayload?.lang === 'en' ? 'en' : 'zh',
     }
   } catch (error) {
     console.error('❌ [GrokProvider] 生成消息失败:', error.message)

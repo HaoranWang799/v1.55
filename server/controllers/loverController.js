@@ -9,6 +9,12 @@
 
 import { generateMessage, generateBatch, clearMemory } from '../services/loverService.js'
 
+function resolveLang(req) {
+  const body = req.body || {}
+  const raw = body.lang || body.context?.lang
+  return raw === 'en' ? 'en' : 'zh'
+}
+
 /**
  * POST /api/lover/message
  * 生成虚拟助手消息
@@ -17,8 +23,13 @@ export async function handlePostMessage(req, res, next) {
   try {
     const { text, message, forceRefresh, context } = req.body || {}
     const apiKeyOverride = String(req.headers['x-grok-api-key'] || '').trim()
+    const lang = resolveLang(req)
+    const scopedContext = {
+      ...(context || {}),
+      lang,
+    }
 
-    const result = await generateMessage(typeof text === 'string' ? text : (message || ''), forceRefresh || false, context || {}, apiKeyOverride)
+    const result = await generateMessage(typeof text === 'string' ? text : (message || ''), forceRefresh || false, scopedContext, apiKeyOverride)
 
     res.json({
       ok: true,
@@ -36,7 +47,7 @@ export async function handlePostMessage(req, res, next) {
 export async function handlePostBatch(req, res, next) {
   try {
     const apiKeyOverride = String(req.headers['x-grok-api-key'] || '').trim()
-    const items = await generateBatch(apiKeyOverride)
+    const items = await generateBatch(apiKeyOverride, { lang: resolveLang(req) })
     res.json({
       ok: true,
       data: items,

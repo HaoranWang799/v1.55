@@ -4,14 +4,24 @@
  * 当 Grok 失败时的自动降级方案
  */
 
-const MOCK_MESSAGES = [
-  { text: '今天这么努力，想要什么奖励呢？❤️', mood: '暧昧' },
-  { text: '你的坚持真的很让人心疼呢...', mood: '温柔' },
-  { text: '又在偷偷用功？我看着呢🙈', mood: '调皮' },
-  { text: '这样子想来见我吗？', mood: '暧昧' },
-  { text: '你最近真的进步很大呢，为你骄傲 💕', mood: '温柔' },
-  { text: '累了吗？要不要休息一下..', mood: '温柔' },
-]
+const MOCK_MESSAGES = {
+  zh: [
+    { text: '今天这么努力，想要什么奖励呢？❤️', mood: '暧昧' },
+    { text: '你的坚持真的很让人心疼呢...', mood: '温柔' },
+    { text: '又在偷偷用功？我看着呢🙈', mood: '调皮' },
+    { text: '这样子想来见我吗？', mood: '暧昧' },
+    { text: '你最近真的进步很大呢，为你骄傲 💕', mood: '温柔' },
+    { text: '累了吗？要不要休息一下..', mood: '温柔' },
+  ],
+  en: [
+    { text: 'You worked so hard today. What kind of reward do you want?', mood: '暧昧' },
+    { text: 'Seeing you keep going like this makes me want to take care of you.', mood: '温柔' },
+    { text: 'Working hard in secret again? I noticed.', mood: '调皮' },
+    { text: 'Were you trying to come see me like this?', mood: '暧昧' },
+    { text: 'You have improved so much lately. I am proud of you.', mood: '温柔' },
+    { text: 'Tired? Come rest with me for a moment.', mood: '温柔' },
+  ],
+}
 
 const HEALTH_SUMMARIES = [
   '今天整体节奏比较稳，继续把训练和恢复平衡好，状态会更顺。',
@@ -65,8 +75,12 @@ const VIBRATION_MODE_OPTIONS = [
   },
 ]
 
-let lastMessageIndex = -1
+const lastMessageIndexByLang = {}
 let lastHealthFingerprint = ''
+
+function resolveLang(lang) {
+  return lang === 'en' ? 'en' : 'zh'
+}
 
 function pickRandomUniqueItems(pool, count) {
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
@@ -97,20 +111,23 @@ function buildRandomHealthPlan() {
  */
 export async function generateLoverMessage(_promptPayload, _apiKeyOverride = '') {
   console.log('📦 [MockProvider] 返回模拟消息')
+  const activeLang = resolveLang(_promptPayload?.lang || _promptPayload?.context?.lang)
+  const pool = MOCK_MESSAGES[activeLang]
 
   // 模拟随机延迟（更真实）
   await new Promise((resolve) => setTimeout(resolve, Math.random() * 500 + 200))
 
-  let randomIndex = Math.floor(Math.random() * MOCK_MESSAGES.length)
-  if (MOCK_MESSAGES.length > 1 && randomIndex === lastMessageIndex) {
-    randomIndex = (randomIndex + 1) % MOCK_MESSAGES.length
+  let randomIndex = Math.floor(Math.random() * pool.length)
+  if (pool.length > 1 && randomIndex === lastMessageIndexByLang[activeLang]) {
+    randomIndex = (randomIndex + 1) % pool.length
   }
-  lastMessageIndex = randomIndex
-  const mockMessage = MOCK_MESSAGES[randomIndex]
+  lastMessageIndexByLang[activeLang] = randomIndex
+  const mockMessage = pool[randomIndex]
 
   return {
     text: mockMessage.text,
     mood: mockMessage.mood,
+    lang: activeLang,
   }
 }
 

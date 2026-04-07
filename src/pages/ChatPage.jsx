@@ -8,7 +8,7 @@ import { useL } from '../i18n/useL'
 export default function ChatPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { showToast } = useApp()
+  const { showToast, lang } = useApp()
   const L = useL()
   const [inputVal, setInputVal] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -25,7 +25,7 @@ export default function ChatPage() {
     }
   }, [location.state])
 
-  const storageKey = `ai-lover-chat:${lover.id}`
+  const storageKey = `ai-lover-chat:${lover.id}:${lang}`
 
   const [messages, setMessages] = useState(() => {
     const cached = window.localStorage.getItem(storageKey)
@@ -101,10 +101,12 @@ export default function ChatPage() {
         forceRefresh: true,
         text: content,
         context: {
+          lang,
           userName: L('主人', 'Master'),
           loverId: lover.id,
           loverName: lover.name,
         },
+        lang,
       })
 
       const reply = String(result?.text || '').trim() || L('我在这，继续和我说说吧。', "I'm here, keep talking to me.")

@@ -1,36 +1,45 @@
 const loverCache = {
-  latestMessage: null,
-  latestAt: 0,
-  refreshing: false,
+  latestByLang: {},
+  refreshingByLang: {},
 }
 
-function getCachedLoverMessage(ttlMs) {
-  if (!loverCache.latestMessage) return null
-  if (Date.now() - loverCache.latestAt >= ttlMs) return null
-  return loverCache.latestMessage
+function resolveLang(lang) {
+  return lang === 'en' ? 'en' : 'zh'
 }
 
-function setCachedLoverMessage(message) {
-  loverCache.latestMessage = message
-  loverCache.latestAt = Date.now()
+function getCachedLoverMessage(ttlMs, lang = 'zh') {
+  const entry = loverCache.latestByLang[resolveLang(lang)]
+  if (!entry?.message) return null
+  if (Date.now() - entry.latestAt >= ttlMs) return null
+  return entry.message
 }
 
-function getLatestLoverMessage() {
-  return loverCache.latestMessage
+function setCachedLoverMessage(message, lang = message?.lang || 'zh') {
+  const activeLang = resolveLang(lang)
+  loverCache.latestByLang[activeLang] = {
+    message: {
+      ...message,
+      lang: activeLang,
+    },
+    latestAt: Date.now(),
+  }
 }
 
-function isLoverRefreshRunning() {
-  return loverCache.refreshing
+function getLatestLoverMessage(lang = 'zh') {
+  return loverCache.latestByLang[resolveLang(lang)]?.message || null
 }
 
-function setLoverRefreshRunning(refreshing) {
-  loverCache.refreshing = refreshing
+function isLoverRefreshRunning(lang = 'zh') {
+  return Boolean(loverCache.refreshingByLang[resolveLang(lang)])
+}
+
+function setLoverRefreshRunning(refreshing, lang = 'zh') {
+  loverCache.refreshingByLang[resolveLang(lang)] = Boolean(refreshing)
 }
 
 function clearLoverCache() {
-  loverCache.latestMessage = null
-  loverCache.latestAt = 0
-  loverCache.refreshing = false
+  loverCache.latestByLang = {}
+  loverCache.refreshingByLang = {}
 }
 
 export {
