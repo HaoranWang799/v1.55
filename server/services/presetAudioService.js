@@ -20,9 +20,12 @@ function getAudioKey(presetId, lang = 'zh') {
   return lang === 'en' ? `${presetId}_en` : presetId
 }
 
-function getStreamUrl(presetId, lang = 'zh') {
-  const query = lang === 'en' ? '?lang=en' : ''
-  return `/api/scripts/preset-audio/${encodeURIComponent(presetId)}/stream${query}`
+function getStreamUrl(presetId, lang = 'zh', version = null) {
+  const params = new URLSearchParams()
+  if (lang === 'en') params.set('lang', 'en')
+  if (version) params.set('v', String(version))
+  const query = params.toString()
+  return `/api/scripts/preset-audio/${encodeURIComponent(presetId)}/stream${query ? `?${query}` : ''}`
 }
 
 function getVoiceText(scene, lang = 'zh') {
@@ -195,7 +198,7 @@ async function getNextVersion(audioKey) {
   return (current?.version || 0) + 1
 }
 
-function buildPresetScript(scene, lang, cached, character = null) {
+function buildPresetScript(scene, lang, cached, character = null, version = null) {
   const text = getVoiceText(scene, lang)
   const role = getVoiceRole(scene, lang)
   const title = getVoiceTitle(scene, lang)
@@ -228,8 +231,9 @@ function buildPresetScript(scene, lang, cached, character = null) {
     isAIGenerated: true,
     isPresetVoice: true,
     isFree: true,
-    audioUrl: getStreamUrl(scene.id, lang),
+    audioUrl: getStreamUrl(scene.id, lang, version),
     audioCached: cached,
+    audioVersion: version,
     freeCoverImage: scene.freeCoverImage || '',
     vipCoverImage: scene.vipCoverImage || '',
   }
@@ -253,7 +257,7 @@ export async function preparePresetVoiceAudio(presetId, options = {}) {
       return {
         ok: true,
         cached: true,
-        script: buildPresetScript(scene, lang, true, storedCharacter),
+        script: buildPresetScript(scene, lang, true, storedCharacter, current.version),
       }
     }
   }
@@ -279,7 +283,7 @@ export async function preparePresetVoiceAudio(presetId, options = {}) {
   await writeFile(metadataPath, JSON.stringify(scriptJson, null, 2), 'utf8')
   await saveAudioRecord({ audioKey, presetId: scene.id, lang, fileName, version, scriptJson })
 
-  return { ok: true, cached: false, script: buildPresetScript(scene, lang, false, character) }
+  return { ok: true, cached: false, script: buildPresetScript(scene, lang, false, character, version) }
 }
 
 export async function getPresetVoiceAudioStream(presetId, options = {}) {

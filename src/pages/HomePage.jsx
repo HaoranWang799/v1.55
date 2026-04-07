@@ -143,7 +143,7 @@ const TEASER_LINES = {
 const CIRCLE_RADIUS = 38
 const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS // ≈ 238.76
 
-function LoadingPanel({ progress, phase, onEnter, remainingQuota = 2, totalQuota = 3 }) {
+function LoadingPanel({ progress, phase, onEnter, onRetry, remainingQuota = 2, totalQuota = 3 }) {
   const { lang } = useApp()
   const L = useL()
   const teaserLines = TEASER_LINES[lang] || TEASER_LINES.zh
@@ -249,17 +249,28 @@ function LoadingPanel({ progress, phase, onEnter, remainingQuota = 2, totalQuota
 
         {/* ── 轮播文案 / 完成进入按钮 ── */}
         {isDone ? (
-          <button
-            onClick={onEnter}
-            className="px-6 py-2.5 rounded-full text-white text-sm font-semibold"
-            style={{
-              background: 'linear-gradient(135deg, #FF9ACB, #B380FF)',
-              boxShadow: '0 0 18px rgba(179,128,255,0.5)',
-              animation: 'pulse 1.6s ease-in-out infinite',
-            }}
-          >
-                        {L('现在进入 →', 'Enter Now →')}
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={onEnter}
+              className="px-6 py-2.5 rounded-full text-white text-sm font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #FF9ACB, #B380FF)',
+                boxShadow: '0 0 18px rgba(179,128,255,0.5)',
+                animation: 'pulse 1.6s ease-in-out infinite',
+              }}
+            >
+              {L('现在进入 →', 'Enter Now →')}
+            </button>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-[10px] font-medium text-[rgba(245,240,242,0.42)] underline underline-offset-4 decoration-white/20 active:scale-95 transition-all"
+              >
+                {L('不满意？再次尝试', 'Not right? Try again')}
+              </button>
+            )}
+          </div>
         ) : (
           <p
             className="text-[13px] font-medium tracking-wide text-center px-6 transition-opacity duration-400"
@@ -760,6 +771,63 @@ export default function HomePage() {
     }, 1500)
   }, [isVoiceActive, increaseTemp, triggerDeviceNotif, triggerAvatarPop, typeText, pickResponse])
 
+  const runPresetGeneration = useCallback(async (presetId, { force = false } = {}) => {
+    setIsGenerating(true)
+    setGeneratedScripts([])
+    setGenProgress(0)
+    setGenPhase('text')
+    ttsReadyRef.current = false
+
+    if (genTimerRef.current) clearInterval(genTimerRef.current)
+    if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
+
+    genTimerRef.current = setInterval(() => {
+      setGenProgress((p) => Math.min(p + 9, 90))
+    }, 350)
+
+    try {
+      const [result] = await Promise.all([
+        preparePresetVoiceAudio(presetId, { lang, force }),
+        wait(3500),
+      ])
+      clearInterval(genTimerRef.current)
+      genTimerRef.current = null
+      if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
+      ttsReadyRef.current = true
+      const ts = Date.now()
+      const presetScript = result.script
+      setGeneratedScripts([
+        {
+          ...presetScript,
+          id: `${presetScript.id}-free-${ts}`,
+          isFree: true,
+          coverImage: presetScript.freeCoverImage,
+        },
+        {
+          ...presetScript,
+          id: `${presetScript.id}-vip-${ts}`,
+          isFree: false,
+          coverImage: presetScript.vipCoverImage,
+        },
+      ])
+      setGenProgress(100)
+      setGenPhase('done')
+    } catch (err) {
+      clearInterval(genTimerRef.current)
+      genTimerRef.current = null
+      if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
+      setIsGenerating(false)
+      setGenPhase(null)
+      alert(L(`✨ 语音准备失败：${err.message}`, `✨ Voice failed: ${err.message}`))
+    }
+  }, [lang, L, setGeneratedScripts, setGenPhase, setGenProgress, setIsGenerating, genTimerRef, phase2bTimerRef, ttsReadyRef])
+
+  const handleRetryPresetGenerate = useCallback(() => {
+    const presetId = generatedScripts.find((script) => script.isPresetVoice && script.presetId)?.presetId || selectedPresetId
+    if (!presetId) return
+    runPresetGeneration(presetId, { force: true })
+  }, [generatedScripts, selectedPresetId, runPresetGeneration])
+
   // ── 自定义剧本生成（B方案：Grok + Fish Audio 两段式进度）────
   const handleGenerate = useCallback(async () => {
     const prompt = customPrompt.trim()
@@ -773,54 +841,7 @@ export default function HomePage() {
       || allPresetSuggestions.find((s) => s.text === prompt)
 
     if (selectedPreset?.id) {
-      setIsGenerating(true)
-      setGeneratedScripts([])
-      setGenProgress(0)
-      setGenPhase('text')
-      ttsReadyRef.current = false
-
-      if (genTimerRef.current) clearInterval(genTimerRef.current)
-      if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
-
-      genTimerRef.current = setInterval(() => {
-        setGenProgress((p) => Math.min(p + 9, 90))
-      }, 350)
-
-      try {
-        const [result] = await Promise.all([
-          preparePresetVoiceAudio(selectedPreset.id, { lang }),
-          wait(3500),
-        ])
-        clearInterval(genTimerRef.current)
-        genTimerRef.current = null
-        if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
-        ttsReadyRef.current = true
-        const ts = Date.now()
-        const presetScript = result.script
-        setGeneratedScripts([
-          {
-            ...presetScript,
-            id: `${presetScript.id}-free-${ts}`,
-            isFree: true,
-            coverImage: presetScript.freeCoverImage,
-          },
-          {
-            ...presetScript,
-            id: `${presetScript.id}-vip-${ts}`,
-            isFree: false,
-            coverImage: presetScript.vipCoverImage,
-          },
-        ])
-        setGenProgress(100)
-        setGenPhase('done')
-      } catch (err) {
-        clearInterval(genTimerRef.current)
-        genTimerRef.current = null
-        if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
-        setIsGenerating(false)
-        setGenPhase(null)
-        alert(L(`✨ 语音准备失败：${err.message}`, `✨ Voice failed: ${err.message}`))
-      }
+      await runPresetGeneration(selectedPreset.id)
       return
     }
 
@@ -945,7 +966,7 @@ export default function HomePage() {
       setGenPhase('done')
     }
     // isGenerating 保持 true，等用户点"现在进入"按钮后再 false
-  }, [customPrompt, selectedPresetId, promptSugs, lang])
+  }, [customPrompt, selectedPresetId, promptSugs, lang, runPresetGeneration])
 
   // ── 定制剧本：点击"开始互动" ──────────────────────────────
   // 根据已选角色 + 场景动态构造脚本对象，复用 enterInteract 逻辑
@@ -1196,6 +1217,7 @@ export default function HomePage() {
                   setIsGenerating(false)
                   setGenPhase(null)
                 }}
+                onRetry={generatedScripts.some((script) => script.isPresetVoice) ? handleRetryPresetGenerate : null}
               />
             )}
 
