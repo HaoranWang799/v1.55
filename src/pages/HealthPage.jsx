@@ -172,7 +172,7 @@ export default function HealthPage() {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                第 12,345 位
+                {L('第 12,345 位', 'Rank #12,345')}
               </div>
               <div className="text-sm text-[rgba(245,240,242,0.5)] mt-0.5">{L('击败全国 98% 的猛男', 'Beat 98% of all men nationwide')}</div>
             </div>
@@ -181,7 +181,7 @@ export default function HealthPage() {
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl p-3 bg-[rgba(255,154,203,0.06)] border border-[rgba(255,154,203,0.1)] text-center">
               <p className="text-[9px] text-[rgba(245,240,242,0.4)] mb-1 tracking-wider">{L('本城排名', 'City Ranking')}</p>
-              <p className="text-sm font-bold" style={{ background: 'linear-gradient(135deg, #FF9ACB, #B380FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{L('北京 第 888 名', 'Beijing #888')}</p>
+              <p className="text-sm font-bold" style={{ background: 'linear-gradient(135deg, #FF9ACB, #B380FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{L('北京 第 888 名', 'Beijing Rank #888')}</p>
               <p className="text-[10px] text-[rgba(245,240,242,0.4)] mt-0.5">{L('城市前 2%', 'Top 2% in city')}</p>
             </div>
             <div className="rounded-xl p-3 bg-[rgba(179,128,255,0.06)] border border-[rgba(179,128,255,0.1)] text-center">
@@ -455,7 +455,7 @@ export default function HealthPage() {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                第 12,345 位
+                {L('第 12,345 位', 'Rank #12,345')}
               </div>
               <div className="text-sm text-[rgba(245,240,242,0.6)] mb-3">{L('击败全国 98% 的猛男', 'Beat 98% of all men nationwide')}</div>
 
@@ -463,7 +463,7 @@ export default function HealthPage() {
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <div className="rounded-lg p-2 bg-[rgba(255,154,203,0.08)] border border-[rgba(255,154,203,0.12)]">
                   <div className="text-[9px] text-[rgba(245,240,242,0.4)] mb-0.5">{L('本城排名', 'City Ranking')}</div>
-                  <div className="text-xs font-bold" style={{ background: 'linear-gradient(135deg, #FF9ACB, #B380FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{L('北京 第 888 名', 'Beijing #888')}</div>
+                  <div className="text-xs font-bold" style={{ background: 'linear-gradient(135deg, #FF9ACB, #B380FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{L('北京 第 888 名', 'Beijing Rank #888')}</div>
                   <div className="text-[9px] text-[rgba(245,240,242,0.35)]">{L('城市前 2%', 'Top 2% in city')}</div>
                 </div>
                 <div className="rounded-lg p-2 bg-[rgba(179,128,255,0.08)] border border-[rgba(179,128,255,0.12)]">
