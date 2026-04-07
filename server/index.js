@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { existsSync } from 'fs'
 import express from 'express'
+import compression from 'compression'
 import { errorHandler } from './middleware/errorHandler.js'
 import loverRoutes from './routes/lover.js'
 import healthRoutes from './routes/health.js'
@@ -24,6 +25,9 @@ config({ path: join(__dirname, '.env') })
 
 const app = express()
 const DIST_DIR = join(__dirname, '..', 'dist')
+
+// ── Gzip 压缩（所有响应体积减少 60-80%）───────────────────
+app.use(compression())
 
 // ── CORS 中间件 ──────────────────────────────────────────
 const CORS_ALLOW_ORIGINS = String(process.env.CORS_ALLOW_ORIGINS || '*')
@@ -67,8 +71,11 @@ app.use(errorHandler)
 
 // ── 托管前端静态文件（dist/），SPA fallback ──────────────
 if (existsSync(DIST_DIR)) {
-  app.use(express.static(DIST_DIR))
+  // assets/ 下文件带 hash，永久缓存；其余（index.html）不缓存
+  app.use('/assets', express.static(join(DIST_DIR, 'assets'), { maxAge: '1y', immutable: true }))
+  app.use(express.static(DIST_DIR, { maxAge: '1h' }))
   app.get('*', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache')
     res.sendFile(join(DIST_DIR, 'index.html'))
   })
 } else {
