@@ -352,6 +352,35 @@ const LEGACY_POSTS_EN = {
   },
 }
 
+const COMMUNITY_NAME_EN = {
+  '小野猫': 'Kitten',
+  '硬汉柔情': 'Soft-Hearted Tough Guy',
+  '彩虹下的他': 'Under the Rainbow',
+  '甜蜜小两口': 'Sweet Couple',
+  '夜行狐': 'Night Fox',
+  '熊猫不睡觉': 'Sleepless Panda',
+  '攻略达人': 'Guide Master',
+  '隐藏剧情猎人': 'Hidden Ending Hunter',
+  '蝴蝶效应': 'Butterfly Effect',
+  '数据控小明': 'Data Ming',
+  '创作家Mia': 'Creator Mia',
+  '写字的人': 'The Writer',
+  '彩虹糖果': 'Rainbow Candy',
+  '插画师Leo': 'Illustrator Leo',
+}
+
+const COMMUNITY_TEMPLATE_EN = {
+  '冷感女上司·深夜版': 'Cold Boss Lady · Late Night',
+  '温柔学妹·宿舍私语': 'Sweet Junior · Dorm Whisper',
+  '彩虹之约·校园初恋': 'Rainbow Promise · Campus First Love',
+  '阳台邂逅·月夜情话': 'Balcony Encounter · Moonlit Confession',
+  '阳台·神秘邻居': 'Balcony · Mysterious Neighbor',
+  '知性女老师·放学后': 'Intellectual Teacher · After Class',
+  '深夜阳台·神秘邻居': 'Late-Night Balcony · Mysterious Neighbor',
+  '神秘邻居·月夜偶遇': 'Mysterious Neighbor · Moonlit Encounter',
+  '郁金香庭院·雨后': 'Tulip Courtyard · After Rain',
+}
+
 // ═══════════════════════════════════════════════════════════
 //  子组件
 // ═══════════════════════════════════════════════════════════
@@ -361,14 +390,16 @@ const LEGACY_POSTS_EN = {
  * 新增 likes 数显示
  */
 function TopComment({ comment }) {
+  const L = useL()
   const [liked, setLiked] = useState(false)
   const displayLikes = liked ? comment.likes + 1 : comment.likes
+  const displayName = L(comment.name, COMMUNITY_NAME_EN[comment.name] || comment.name)
   return (
     <div className="flex items-start gap-2 pt-2 border-t border-[rgba(255,255,255,0.04)]">
       <span className="text-sm mt-0.5 flex-shrink-0">{comment.avatar}</span>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] text-[rgba(245,240,242,0.5)] leading-relaxed">
-          <span className="text-[rgba(245,240,242,0.65)] font-medium">{comment.name}：</span>
+          <span className="text-[rgba(245,240,242,0.65)] font-medium">{displayName}{L('：', ': ')}</span>
           {comment.text}
         </p>
       </div>
@@ -422,6 +453,8 @@ function PostCard({ post, likeState, onLike }) {
   const bookmarks = Number(post.bookmarks || 0)
   const imgColor = post.imgColor || 'from-[#1a1028] to-[#251840]'
   const imgEmoji = post.imgEmoji || post.avatar || '✨'
+  const displayName = L(post.name, COMMUNITY_NAME_EN[post.name] || post.name)
+  const displayTemplateName = L(post.templateName, COMMUNITY_TEMPLATE_EN[post.templateName] || post.templateName)
 
   return (
     <div className="rounded-2xl p-4 card-glow bg-[rgba(30,20,25,0.6)] space-y-3">
@@ -430,7 +463,7 @@ function PostCard({ post, likeState, onLike }) {
         <span className="text-2xl leading-none">{post.avatar}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs font-semibold text-[rgba(245,240,242,0.9)] truncate">{post.name}</p>
+            <p className="text-xs font-semibold text-[rgba(245,240,242,0.9)] truncate">{displayName}</p>
             <GenderBadge gender={post.gender} />
           </div>
           <p className="text-[10px] text-[rgba(245,240,242,0.4)]">{L(post.time, en?.time || post.time)}</p>
@@ -473,10 +506,10 @@ function PostCard({ post, likeState, onLike }) {
       {/* 试用模板按钮 */}
       {post.templateName && (
         <button
-          onClick={() => alert(L('试用模板：', 'Try template: ') + post.templateName)}
+          onClick={() => alert(L('试用模板：', 'Try template: ') + displayTemplateName)}
           className="inline-flex items-center gap-1 text-xs bg-white/10 px-3 py-1 rounded-full hover:bg-white/20 transition mt-2"
         >
-          🔗 {L('试用同款：', 'Try: ')}{post.templateName}
+          🔗 {L('试用同款：', 'Try: ')}{displayTemplateName}
         </button>
       )}
 
