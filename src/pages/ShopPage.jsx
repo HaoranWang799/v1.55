@@ -800,7 +800,7 @@ const SCRIPTS = [
     title: '宿舍深夜·学妹的告白', persona: 'xuemei',     intensity: 'light', duration: 's', tab: 'hot',
     rating: 4.8, reviews: '5.1k', badge: '💕 超甜', badgeColor: 'bg-[#A87CFF]/30 text-[#C9A0FF]',
     price: { type: 'free', label: '免费' } },
-  { id: 's3',  emoji: '🔮', bgFrom: '#1a0a28', bgTo: '#2a1040', bgImage: '/images/scripts/s3.jpg',
+  { id: 's3',  emoji: '🔮', bgFrom: '#1a0a28', bgTo: '#2a1040', bgImage: '/images/scripts/s3.jpg?v=20260408b',
     title: '密室游戏·被绑缚的秘密', persona: 'wildcat',   intensity: 'max',   duration: 'l', tab: 'hot',
     rating: 4.9, reviews: '4.8k', badge: '🔒 限制级', badgeColor: 'bg-black/40 text-[#FF2A6D]',
     price: { type: 'diamonds', amount: 150, memberAmount: 120, label: '💎 150' } },
