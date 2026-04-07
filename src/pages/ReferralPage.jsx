@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import HeaderBar from '../components/ui/HeaderBar'
 import { useApp } from '../context/AppContext'
-import { Gift, Droplet, Users, Copy, Check, Share2 } from 'lucide-react'
+import { Gift, Copy, Check, Share2, Sparkles } from 'lucide-react'
 import { useL } from '../i18n/useL'
 
 const REFERRAL_CODE = 'LUNA2024'
@@ -65,8 +65,10 @@ export default function ReferralPage() {
           />
 
           <div className="relative z-10 p-6 flex flex-col items-center text-center">
-            <div className="w-14 h-14 bg-[#FF2A6D]/20 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_15px_#FF2A6D]">
-              <Droplet size={28} className="text-[#FF2A6D] fill-current animate-pulse" />
+            <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_24px_rgba(255,42,109,0.55)] bg-gradient-to-br from-[#FF2A6D]/30 via-[#7B1844]/35 to-[#A87CFF]/25 border border-[#FF7DAF]/25 overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.22),transparent_38%)]" />
+              <Gift size={30} className="relative z-10 text-[#FFE5F0]" strokeWidth={1.9} />
+              <Sparkles size={14} className="absolute right-3 top-3 text-[#FFD1E3]" strokeWidth={2.4} />
             </div>
             <h2 className="text-xl font-black text-[#F9EDF5] tracking-widest drop-shadow-[0_0_5px_#FF2A6D]">{L('专属邀请计划', 'Exclusive Referral Program')}</h2>
             <p className="text-sm text-[#FF2A6D]/80 mt-2 font-medium">{L('每成功邀请一位新朋友加入体验', 'For each friend who joins')}</p>
