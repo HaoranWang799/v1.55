@@ -7,7 +7,6 @@
  *   • 本文件仅保留主逻辑 + 视图编排
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Sparkles, Pause, Play, Flame } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import {
@@ -31,6 +30,13 @@ import {
   preparePresetVoiceAudio,
 } from '../api/scripts'
 import { useL } from '../i18n/useL'
+
+function resolveApiUrl(path) {
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path
+  const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
+  return base ? `${base}${path.startsWith('/') ? path : `/${path}`}` : path
+}
 
 // ── 输入提示词数据 ─────────────────────────────────
 const PROMPT_TABS = {
@@ -330,7 +336,6 @@ export default function HomePage() {
     lang,
   } = useApp()
   const L = useL()
-  const navigate = useNavigate()
   const d = (item, field) => (lang === 'en' && item?.[field + 'En']) || item?.[field]
   const promptTabs = PROMPT_TABS[lang] || PROMPT_TABS.zh
   const promptSugs = PROMPT_SUGGESTIONS[lang] || PROMPT_SUGGESTIONS.zh
@@ -766,31 +771,26 @@ export default function HomePage() {
     if (selectedPreset?.id) {
       setIsGenerating(true)
       setGeneratedScripts([])
-      setGenProgress(12)
-      setGenPhase('audio')
+      setGenProgress(0)
+      setGenPhase('text')
+      ttsReadyRef.current = false
 
       if (genTimerRef.current) clearInterval(genTimerRef.current)
       if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
 
       genTimerRef.current = setInterval(() => {
-        setGenProgress((p) => Math.min(p + 12, 88))
-      }, 500)
+        setGenProgress((p) => Math.min(p + 10, 90))
+      }, 1000)
 
       try {
         const result = await preparePresetVoiceAudio(selectedPreset.id, { lang })
         clearInterval(genTimerRef.current)
         genTimerRef.current = null
         if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
+        ttsReadyRef.current = true
+        setGeneratedScripts([result.script])
         setGenProgress(100)
-        setGenPhase(null)
-        setIsGenerating(false)
-        navigate('/player', {
-          state: {
-            autoStart: true,
-            presetVoice: true,
-            script: result.script,
-          },
-        })
+        setGenPhase('done')
       } catch (err) {
         clearInterval(genTimerRef.current)
         genTimerRef.current = null
@@ -923,7 +923,7 @@ export default function HomePage() {
       setGenPhase('done')
     }
     // isGenerating 保持 true，等用户点"现在进入"按钮后再 false
-  }, [customPrompt, selectedPresetId, promptSugs, lang, navigate])
+  }, [customPrompt, selectedPresetId, promptSugs, lang])
 
   // ── 定制剧本：点击"开始互动" ──────────────────────────────
   // 根据已选角色 + 场景动态构造脚本对象，复用 enterInteract 逻辑
@@ -981,8 +981,12 @@ export default function HomePage() {
       openingAudioRef.current.pause()
       openingAudioRef.current = null
     }
-    if (view === 'interact' && activeScript?.audioBase64) {
-      const audio = new Audio(`data:audio/mp3;base64,${activeScript.audioBase64}`)
+    const audioUrl = activeScript?.audioBase64
+      ? `data:audio/mp3;base64,${activeScript.audioBase64}`
+      : resolveApiUrl(activeScript?.audioUrl)
+
+    if (view === 'interact' && audioUrl) {
+      const audio = new Audio(audioUrl)
       openingAudioRef.current = audio
       audio.addEventListener('loadedmetadata', () => {
         setAudioDuration(Math.ceil(audio.duration))

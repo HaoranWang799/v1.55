@@ -1,99 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Activity, Pause, Play, ChevronDown } from 'lucide-react'
 import { useL } from '../i18n/useL'
-import { buildApiUrl } from '../api/baseUrl'
-
-function formatClock(seconds) {
-  const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0
-  const mins = Math.floor(safeSeconds / 60)
-  const secs = String(safeSeconds % 60).padStart(2, '0')
-  return `${mins}:${secs}`
-}
 
 // 全屏播放器，无底部导航
 export default function PlayerPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const L = useL()
-  const audioRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(true)
 
   const routeScript = location.state?.script
-  const title = routeScript?.title || routeScript?.name || L('午夜调教：主人的失控', 'Midnight Session: Losing Control')
-  const modeLabel = routeScript?.intensity || routeScript?.personalityTag || L('默认模式', 'Default Mode')
-  const audioUnavailableText = L('音频暂时无法播放', 'Audio unavailable')
-  const audioSrc = useMemo(() => {
-    if (routeScript?.audioUrl) return buildApiUrl(routeScript.audioUrl)
-    if (routeScript?.audioBase64) return `data:audio/mp3;base64,${routeScript.audioBase64}`
-    return ''
-  }, [routeScript?.audioBase64, routeScript?.audioUrl])
-
-  const [isPlaying, setIsPlaying] = useState(Boolean(audioSrc))
-  const [duration, setDuration] = useState(0)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [audioError, setAudioError] = useState('')
-
-  useEffect(() => {
-    if (!audioSrc) {
-      setIsPlaying(false)
-      return
-    }
-
-    const audio = new Audio(audioSrc)
-    audio.preload = 'auto'
-    audioRef.current = audio
-    setAudioError('')
-    setCurrentTime(0)
-    setDuration(0)
-
-    const onLoaded = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
-    const onTime = () => setCurrentTime(audio.currentTime || 0)
-    const onEnded = () => {
-      setIsPlaying(false)
-      setCurrentTime(audio.duration || 0)
-    }
-    const onError = () => {
-      setIsPlaying(false)
-      setAudioError(audioUnavailableText)
-    }
-
-    audio.addEventListener('loadedmetadata', onLoaded)
-    audio.addEventListener('timeupdate', onTime)
-    audio.addEventListener('ended', onEnded)
-    audio.addEventListener('error', onError)
-
-    audio.play()
-      .then(() => setIsPlaying(true))
-      .catch(() => setIsPlaying(false))
-
-    return () => {
-      audio.pause()
-      audio.removeEventListener('loadedmetadata', onLoaded)
-      audio.removeEventListener('timeupdate', onTime)
-      audio.removeEventListener('ended', onEnded)
-      audio.removeEventListener('error', onError)
-      audioRef.current = null
-    }
-  }, [audioSrc, audioUnavailableText])
-
-  const togglePlayback = (event) => {
-    event.stopPropagation()
-    const audio = audioRef.current
-    if (!audio) {
-      setIsPlaying((value) => !value)
-      return
-    }
-    if (isPlaying) {
-      audio.pause()
-      setIsPlaying(false)
-    } else {
-      audio.play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false))
-    }
-  }
-
-  const progress = duration ? Math.min(100, (currentTime / duration) * 100) : 0
+  const title = routeScript?.title || L('午夜调教：主人的失控', 'Midnight Session: Losing Control')
+  const modeLabel = routeScript?.intensity || L('默认模式', 'Default Mode')
 
   return (
     <div
@@ -104,7 +23,7 @@ export default function PlayerPage() {
       <div className="p-6 flex justify-between items-start z-20 bg-gradient-to-b from-black/80 to-transparent">
         <div>
           <div className="text-[10px] text-[#FF7DAF] font-mono tracking-widest animate-pulse">
-            {location.state?.presetVoice ? 'PRESET_READY' : location.state?.randomGenerated ? 'RANDOM_READY' : 'LINK_ACTIVE'}
+            {location.state?.randomGenerated ? 'RANDOM_READY' : 'LINK_ACTIVE'}
           </div>
           <h2 className="text-sm font-bold text-[#F9EDF5] mt-1">{title}</h2>
           <p className="text-[11px] text-[#9B859D] mt-1">{modeLabel}</p>
@@ -131,24 +50,9 @@ export default function PlayerPage() {
       {/* 控制区（双击整屏也可返回，提示文字） */}
       <div className="p-8 pb-12 bg-black/50">
         <p className="text-center text-[10px] text-white/20 mb-6">{L('双击屏幕退出', 'Double-tap to Exit')}</p>
-        {audioSrc && (
-          <div className="mb-5">
-            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#FF7DAF] to-[#A87CFF]"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-[10px] text-white/35 tabular-nums">
-              <span>{formatClock(currentTime)}</span>
-              <span>{formatClock(duration)}</span>
-            </div>
-            {audioError && <p className="mt-2 text-center text-[11px] text-[#FF7DAF]">{audioError}</p>}
-          </div>
-        )}
         <div className="flex items-center justify-center">
           <button
-            onClick={togglePlayback}
+            onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying) }}
             className="w-20 h-20 bg-gradient-to-r from-[#FF7DAF] to-[#A87CFF] rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,125,175,0.4)] active:scale-90 transition-transform"
           >
             {isPlaying ? <Pause size={32} /> : <Play size={32} />}
