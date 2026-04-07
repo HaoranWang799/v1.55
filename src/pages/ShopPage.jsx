@@ -1089,6 +1089,77 @@ function SectionTitle({ icon, title, sub }) {
   )
 }
 
+function ShopNoticeModal({ notice, onClose }) {
+  if (!notice) return null
+
+  const tone = {
+    success: {
+      glow: 'rgba(255,154,203,0.32)',
+      border: 'rgba(255,154,203,0.28)',
+      chip: 'rgba(255,154,203,0.16)',
+    },
+    warning: {
+      glow: 'rgba(255,184,108,0.28)',
+      border: 'rgba(255,184,108,0.26)',
+      chip: 'rgba(255,184,108,0.14)',
+    },
+    payment: {
+      glow: 'rgba(179,128,255,0.3)',
+      border: 'rgba(179,128,255,0.28)',
+      chip: 'rgba(179,128,255,0.15)',
+    },
+  }[notice.tone || 'success']
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center p-6"
+      style={{ background: 'rgba(5,3,6,0.76)', backdropFilter: 'blur(10px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[340px] rounded-3xl p-5 animate-fadeUp"
+        style={{
+          background: 'linear-gradient(155deg, rgba(35,18,40,0.98), rgba(18,10,24,0.98))',
+          border: `1px solid ${tone.border}`,
+          boxShadow: `0 22px 70px ${tone.glow}`,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{
+              background: tone.chip,
+              boxShadow: `0 0 28px ${tone.glow}`,
+            }}
+          >
+            {notice.icon}
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[rgba(255,255,255,0.06)] flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <X size={15} className="text-[rgba(245,240,242,0.5)]" />
+          </button>
+        </div>
+        <h3 className="text-lg font-bold text-[rgba(245,240,242,0.96)] leading-snug mb-2">
+          {notice.title}
+        </h3>
+        <p className="text-[12px] leading-relaxed text-[rgba(245,240,242,0.62)] whitespace-pre-line">
+          {notice.message}
+        </p>
+        <button
+          onClick={onClose}
+          className="mt-5 w-full py-3 rounded-2xl text-sm font-semibold text-white active:scale-[0.98] transition-transform"
+          style={{ background: 'linear-gradient(100deg, #FF78BD, #B979FF)' }}
+        >
+          {notice.actionLabel}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /** 横向滚动行（移动端滑动 + 桌面端鼠标拖拽） */
 function HorizontalScrollRow({ children, className = '', style }) {
   const rowRef = useRef(null)
@@ -1205,7 +1276,16 @@ export default function ShopPage() {
 
   // ── 广告 & 插屏状态 ──────────────────────────────────────
   const [showInterstitial, setShowInterstitial] = useState(false)
+  const [shopNotice, setShopNotice] = useState(null)
   const clickCountRef = useRef(0)
+
+  const showShopNotice = (notice) => {
+    setShopNotice({
+      actionLabel: L('知道了', 'OK'),
+      tone: 'success',
+      ...notice,
+    })
+  }
 
   // ── 记录模板点击（插屏广告逻辑） ─────────────────────────
   const recordTemplateClick = () => {
@@ -1218,51 +1298,87 @@ export default function ShopPage() {
   const handleBuy = (item) => {
     recordTemplateClick()
     const { type, amount, memberAmount, label } = item.price
+    const itemTitle = te(item, 'title', lang)
 
     if (type === 'free') {
-      alert('🎉 已加入您的资料库！')
+      showShopNotice({
+        icon: '🎉',
+        title: L('已加入资料库', 'Added to Library'),
+        message: L(`「${itemTitle}」已加入您的资料库。`, `"${itemTitle}" has been added to your library.`),
+      })
       return
     }
 
     // 灵魂伴侣：所有模板免费
     if (isVIP) {
-      alert(`🎉 「${item.title}」已以灵魂伴侣权益免费领取！`)
+      showShopNotice({
+        icon: '👑',
+        title: L('会员权益已生效', 'Member Benefit Applied'),
+        message: L(`「${itemTitle}」已以灵魂伴侣权益免费领取。`, `"${itemTitle}" was unlocked for free with your Soulmate membership.`),
+      })
       return
     }
 
     // 实际扣除金额（热恋会员享折扣）
     const actualAmount = (isMember && memberAmount) ? memberAmount : amount
     const actualLabel  = (isMember && item.memberPriceLabel) ? item.memberPriceLabel : label
-    const discountNote = isMember ? '（会员折扣）' : ''
+    const discountNote = isMember ? L('（会员折扣）', ' (member discount)') : ''
 
     if (type === 'coins') {
       if (coins >= actualAmount) {
         setCoins(coins - actualAmount)
-        alert(`✅ 购买成功！消耗 ${actualLabel}${discountNote}，余额已更新。`)
+        showShopNotice({
+          icon: '✅',
+          title: L('购买成功', 'Purchase Complete'),
+          message: L(`消耗 ${actualLabel}${discountNote}，余额已更新。`, `Spent ${actualLabel}${discountNote}. Your balance has been updated.`),
+        })
       } else {
-        alert(`❌ 金币不足！\n需要 ${actualLabel}，当前余额 💰 ${coins.toLocaleString()}\n可前往充值页面补充金币。`)
+        showShopNotice({
+          icon: '💰',
+          tone: 'warning',
+          title: L('金币不足', 'Not Enough Coins'),
+          message: L(`需要 ${actualLabel}，当前余额 💰 ${coins.toLocaleString()}。\n可前往充值页面补充金币。`, `You need ${actualLabel}. Current balance: 💰 ${coins.toLocaleString()}.\nGo to Top Up to add more coins.`),
+        })
       }
       return
     }
     if (type === 'diamonds') {
       if (diamonds >= actualAmount) {
         setDiamonds(diamonds - actualAmount)
-        alert(`✅ 购买成功！消耗 ${actualLabel}${discountNote}，余额已更新。`)
+        showShopNotice({
+          icon: '✅',
+          title: L('购买成功', 'Purchase Complete'),
+          message: L(`消耗 ${actualLabel}${discountNote}，余额已更新。`, `Spent ${actualLabel}${discountNote}. Your balance has been updated.`),
+        })
       } else {
-        alert(`❌ 钻石不足！\n需要 ${actualLabel}，当前余额 💎 ${diamonds}\n可前往充值页面补充钻石。`)
+        showShopNotice({
+          icon: '💎',
+          tone: 'warning',
+          title: L('钻石不足', 'Not Enough Diamonds'),
+          message: L(`需要 ${actualLabel}，当前余额 💎 ${diamonds}。\n可前往充值页面补充钻石。`, `You need ${actualLabel}. Current balance: 💎 ${diamonds}.\nGo to Top Up to add more diamonds.`),
+        })
       }
       return
     }
     if (type === 'usd') {
-      alert(`💳 即将跳转支付页面…\n（演示模式，实际支付未接入）`)
+      showShopNotice({
+        icon: '💳',
+        tone: 'payment',
+        title: L('支付即将开放', 'Payment Coming Soon'),
+        message: L('演示模式中，实际支付暂未接入。', 'Demo mode: real payment is not connected yet.'),
+      })
     }
   }
 
   // ── 激励广告 ─────────────────────────────────────────────
   // TODO: 替换为真实激励视频 SDK（AdMob / Unity Ads）
   const handleWatchAd = () => {
-    alert('📺 广告观看模拟…\n🎉 金币 +50 已到账！')
     setCoins((prev) => prev + 50)
+    showShopNotice({
+      icon: '📺',
+      title: L('奖励已到账', 'Reward Added'),
+      message: L('广告观看模拟完成。\n金币 +50 已到账。', 'Ad watch simulation complete.\nCoins +50 credited.'),
+    })
   }
 
   return (
@@ -1440,7 +1556,14 @@ export default function ShopPage() {
             <div
               key={item.id}
               className="rounded-xl px-4 py-3 flex items-center gap-3 card-glow bg-[rgba(30,20,25,0.6)] cursor-pointer hover:bg-[rgba(50,30,40,0.6)] transition-colors"
-              onClick={() => { recordTemplateClick(); alert(`🎉 「${item.title}」已加入资料库！`) }}
+              onClick={() => {
+                recordTemplateClick()
+                showShopNotice({
+                  icon: '🎉',
+                  title: L('已加入资料库', 'Added to Library'),
+                  message: L(`「${te(item, 'title', lang)}」已加入资料库。`, `"${te(item, 'title', lang)}" has been added to your library.`),
+                })
+              }}
             >
               <span className="text-xl">{item.emoji}</span>
               <div className="flex-1">
@@ -1577,7 +1700,15 @@ export default function ShopPage() {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => { setShowInterstitial(false); alert('💳 即将跳转支付…（演示模式）') }}
+                onClick={() => {
+                  setShowInterstitial(false)
+                  showShopNotice({
+                    icon: '💳',
+                    tone: 'payment',
+                    title: L('支付即将开放', 'Payment Coming Soon'),
+                    message: L('演示模式中，实际支付暂未接入。', 'Demo mode: real payment is not connected yet.'),
+                  })
+                }}
                 className="flex-1 py-2.5 rounded-xl btn-main text-white text-sm font-medium"
               >
                 {L('立即抢购', 'Buy Now')} $3.99
@@ -1592,6 +1723,7 @@ export default function ShopPage() {
           </div>
         </div>
       )}
+      <ShopNoticeModal notice={shopNotice} onClose={() => setShopNotice(null)} />
     </div>
   )
 }
