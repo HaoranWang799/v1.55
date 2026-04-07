@@ -11,6 +11,8 @@ const AUDIO_DIR = process.env.PRESET_AUDIO_DIR
     ? join(process.cwd(), 'server', 'storage', 'audio', 'presets')
     : '/data/audio/presets')
 
+const SCRIPT_CACHE_VERSION = 2
+
 let poolPromise = null
 let schemaReadyPromise = null
 
@@ -143,6 +145,7 @@ async function readAudioMetadata(fileName) {
 
 function getStoredCharacter(metadata) {
   if (!metadata) return null
+  if (metadata.cacheVersion !== SCRIPT_CACHE_VERSION) return null
   if (metadata.character) return metadata.character
   if (metadata.name || metadata.openingLine || metadata.personalityTag || metadata.gradient) {
     return metadata
@@ -197,6 +200,9 @@ function buildPresetScript(scene, lang, cached, character = null) {
   const role = getVoiceRole(scene, lang)
   const title = getVoiceTitle(scene, lang)
   const generated = character || {}
+  const generatedName = generated.name || title
+  const generatedPersonalityTag = generated.personalityTag || role
+  const generatedOpeningLine = generated.openingLine || text
 
   return {
     id: `preset-${scene.id}`,
@@ -205,16 +211,16 @@ function buildPresetScript(scene, lang, cached, character = null) {
     sceneId: scene.sceneId,
     cover: scene.coverEmoji,
     coverEmoji: scene.coverEmoji,
-    name: generated.name || title,
-    nameEn: scene.titleEn,
-    title: generated.name || title,
-    titleEn: scene.titleEn,
+    name: generatedName,
+    nameEn: generated.name || scene.titleEn,
+    title: generatedName,
+    titleEn: generated.name || scene.titleEn,
     tag: lang === 'en' ? 'Preset Voice' : '固定语音',
     tagEn: 'Preset Voice',
-    personalityTag: generated.personalityTag || role,
-    personalityTagEn: scene.roleEn,
-    openingLine: generated.openingLine || text,
-    openingLineEn: scene.textEn,
+    personalityTag: generatedPersonalityTag,
+    personalityTagEn: generated.personalityTag || scene.roleEn,
+    openingLine: generatedOpeningLine,
+    openingLineEn: generated.openingLine || scene.textEn,
     downloads: lang === 'en' ? 'Ready' : '已缓存',
     downloadsEn: 'Ready',
     rating: null,
@@ -262,6 +268,7 @@ export async function preparePresetVoiceAudio(presetId, options = {}) {
   const { character } = await generateScriptText(sourcePrompt)
   const audioBase64 = await textToSpeech(character.openingLine)
   const scriptJson = {
+    cacheVersion: SCRIPT_CACHE_VERSION,
     presetId: scene.id,
     lang,
     sourcePrompt,
