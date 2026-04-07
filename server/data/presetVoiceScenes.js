@@ -243,7 +243,7 @@ const PRESET_COVER_IMAGES = {
     vipCoverImage: '/images/covers/rb2.jpg',
   },
   office_01: {
-    freeCoverImage: '/images/covers/s1.jpg',
+    freeCoverImage: '/images/posts/h3.jpg',
     vipCoverImage: '/images/covers/o4.jpg',
   },
   office_02: {
@@ -251,7 +251,7 @@ const PRESET_COVER_IMAGES = {
     vipCoverImage: '/images/covers/fs2.jpg',
   },
   office_03: {
-    freeCoverImage: '/images/posts/h3.jpg',
+    freeCoverImage: '/images/covers/s1.jpg',
     vipCoverImage: '/images/scripts/s3.jpg',
   },
   office_04: {
