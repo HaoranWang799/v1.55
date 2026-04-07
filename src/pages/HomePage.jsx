@@ -1293,6 +1293,7 @@ export default function HomePage() {
                 <video
                   src={`/videos/${activeScript.charId}.mp4`}
                   autoPlay loop muted playsInline
+                  poster={`/images/covers/${activeScript.charId}.jpg`}
                   onError={() => setBgType('image')}
                   className="absolute inset-0 w-full h-full object-cover opacity-35"
                 />

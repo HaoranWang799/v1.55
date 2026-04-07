@@ -16,7 +16,7 @@
  * TODO: 替换广告位为真实激励视频 SDK（AdMob / Unity Ads）
  * TODO: 接入真实支付宝 / 微信 / Stripe 支付
  */
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import { X, Play, Crown } from 'lucide-react'
 import { useApp } from '../context/AppContext'
@@ -477,6 +477,23 @@ function RecommendedCard({ item, onBuy, onCardClick }) {
   const L = useL()
   const isVideo = CARD_VIDEO_IDS.includes(item.id)
   const [imgSrc, setImgSrc] = useState(`/images/covers/${item.id}.jpg`)
+  const videoRef = useRef(null)
+
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          videoRef.current?.play().catch(() => {})
+        } else {
+          videoRef.current?.pause()
+        }
+      },
+      { threshold: 0.25 }
+    )
+    observer.observe(videoRef.current)
+    return () => observer.disconnect()
+  }, [isVideo])
 
   return (
     <div
@@ -487,7 +504,10 @@ function RecommendedCard({ item, onBuy, onCardClick }) {
       {/* 视频封面（文件路径：public/videos/{id}.mp4） */}
       {isVideo && (
         <video
-          autoPlay loop muted playsInline
+          ref={videoRef}
+          loop muted playsInline
+          preload="none"
+          poster={`/images/covers/${item.id}.jpg`}
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src={`/videos/${item.id}.mp4`} type="video/mp4" />
@@ -556,6 +576,23 @@ function SectionCard({ item, onBuy, badge, badgeStyle, showAuthor, showDownloads
   const isFree = item.price.type === 'free'
   const isVideo = CARD_VIDEO_IDS.includes(item.id)
   const [imgSrc, setImgSrc] = useState(`/images/covers/${item.id}.jpg`)
+  const videoRef = useRef(null)
+
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          videoRef.current?.play().catch(() => {})
+        } else {
+          videoRef.current?.pause()
+        }
+      },
+      { threshold: 0.25 }
+    )
+    observer.observe(videoRef.current)
+    return () => observer.disconnect()
+  }, [isVideo])
 
   let btnLabel
   if (isFree) {
@@ -579,7 +616,10 @@ function SectionCard({ item, onBuy, badge, badgeStyle, showAuthor, showDownloads
       {/* 视频封面（文件路径：public/videos/{id}.mp4） */}
       {isVideo && (
         <video
-          autoPlay loop muted playsInline
+          ref={videoRef}
+          loop muted playsInline
+          preload="none"
+          poster={`/images/covers/${item.id}.jpg`}
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src={`/videos/${item.id}.mp4`} type="video/mp4" />
