@@ -54,3 +54,25 @@ export async function generateScriptAudio(openingLine) {
   }
   return res.json()
 }
+
+/**
+ * 预设语音：16 条固定场景共用同一份缓存音频。
+ * 首次请求会由后端生成并写入 Railway Volume，之后直接返回已有音频。
+ */
+export async function preparePresetVoiceAudio(presetId, options = {}) {
+  const url = buildApiUrl('/api/scripts/preset-audio')
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      presetId,
+      lang: options.lang || 'zh',
+      force: Boolean(options.force),
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error?.message || err.error || `预设语音准备失败 (${res.status})`)
+  }
+  return res.json()
+}

@@ -47,6 +47,18 @@ export function errorHandler(err, req, res, next) {
     })
   }
 
+  if (Number.isInteger(err.statusCode) && err.statusCode >= 400 && err.statusCode < 600) {
+    return res.status(err.statusCode).json({
+      ok: false,
+      error: {
+        message: err.message,
+        code: err.code || 'REQUEST_ERROR',
+        statusCode: err.statusCode,
+        timestamp: new Date().toISOString(),
+      },
+    })
+  }
+
   // 未知错误
   res.status(500).json({
     ok: false,

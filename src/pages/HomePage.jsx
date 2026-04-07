@@ -7,6 +7,7 @@
  *   • 本文件仅保留主逻辑 + 视图编排
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Sparkles, Pause, Play, Flame } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import {
@@ -24,7 +25,11 @@ import { CHARACTERS } from '../data/characters'
 import { SCENES } from '../data/scenes'
 import { SCRIPTS, SCRIPT_DESCRIPTIONS, BG_VIDEO_IDS } from '../data/scripts'
 import { PRESETS, TOTAL_SECONDS, pick, formatTime, generateHearts } from '../data/interactData'
-import { generateScriptText as generateScriptTextApi, generateScriptAudio as generateScriptAudioApi } from '../api/scripts'
+import {
+  generateScriptText as generateScriptTextApi,
+  generateScriptAudio as generateScriptAudioApi,
+  preparePresetVoiceAudio,
+} from '../api/scripts'
 import { useL } from '../i18n/useL'
 
 // ── 输入提示词数据 ─────────────────────────────────
@@ -45,54 +50,54 @@ const PROMPT_TABS = {
 const PROMPT_SUGGESTIONS = {
   zh: {
     hot: [
-      { text: '办公室冷感女上司加班时突然变得温柔', role: '女上司' },
-      { text: '宿舍深夜学妹对我说「学长…室友今晚不回了」', role: '学妹' },
-      { text: '跨城跨年前女友雨夜突然敲门', role: '前女友' },
-      { text: '深夜超市邻居少妇一直靠着我结账', role: '少妇' },
+      { id: 'hot_01', text: '办公室冷感女上司加班时突然变得温柔', role: '女上司' },
+      { id: 'hot_02', text: '宿舍深夜学妹对我说「学长…室友今晚不回了」', role: '学妹' },
+      { id: 'hot_03', text: '跨城跨年前女友雨夜突然敲门', role: '前女友' },
+      { id: 'hot_04', text: '深夜超市邻居少妇一直靠着我结账', role: '少妇' },
     ],
     office: [
-      { text: '女上司隔着玻璃给我传小纸条，却一直盯着我笑', role: '女上司' },
-      { text: '秘书整理文件时身体不小心靠了过来', role: '秘书' },
-      { text: '加班到最后一个，总裁关门前说「送你回去吧」', role: '女上司' },
-      { text: '实习生发错文件，被女上司说「进我办公室」', role: '女上司' },
+      { id: 'office_01', text: '女上司隔着玻璃给我传小纸条，却一直盯着我笑', role: '女上司' },
+      { id: 'office_02', text: '秘书整理文件时身体不小心靠了过来', role: '秘书' },
+      { id: 'office_03', text: '加班到最后一个，总裁关门前说「送你回去吧」', role: '女上司' },
+      { id: 'office_04', text: '实习生发错文件，被女上司说「进我办公室」', role: '女上司' },
     ],
     campus: [
-      { text: '图书馆学妹挪到我旁边轻声说「这题教我好不好」', role: '学妹' },
-      { text: '宿舍小万说「就咱俩还没吃呢，一起吧」', role: '邓邓' },
-      { text: '班花说忘带内衣，顺手把小外套在我面前脱了', role: '班花' },
-      { text: '学妹说「学长，我就想问你一件事」目光从未离开', role: '学妹' },
+      { id: 'campus_01', text: '图书馆学妹挪到我旁边轻声说「这题教我好不好」', role: '学妹' },
+      { id: 'campus_02', text: '宿舍小万说「就咱俩还没吃呢，一起吧」', role: '邓邓' },
+      { id: 'campus_03', text: '班花说忘带内衣，顺手把小外套在我面前脱了', role: '班花' },
+      { id: 'campus_04', text: '学妹说「学长，我就想问你一件事」目光从未离开', role: '学妹' },
     ],
     fantasy: [
-      { text: '深夜迟归遇见邻居少妇，她说「别报警，我就住隔壁」', role: '少妇' },
-      { text: '女神说只要赢了两局就可以直接带我回家', role: '女神' },
-      { text: '老师和我走进恰好就我们两个人的资料室', role: '女老师' },
-      { text: '前女友连夜发来十九条消息，最后一条就三个字', role: '前女友' },
+      { id: 'fantasy_01', text: '深夜迟归遇见邻居少妇，她说「别报警，我就住隔壁」', role: '少妇' },
+      { id: 'fantasy_02', text: '女神说只要赢了两局就可以直接带我回家', role: '女神' },
+      { id: 'fantasy_03', text: '老师和我走进恰好就我们两个人的资料室', role: '女老师' },
+      { id: 'fantasy_04', text: '前女友连夜发来十九条消息，最后一条就三个字', role: '前女友' },
     ],
   },
   en: {
     hot: [
-      { text: 'My cold boss suddenly gets tender during overtime at the office', role: 'Boss' },
-      { text: 'Late night, my junior whispers "Senpai… my roommate isn\'t coming back tonight"', role: 'Junior' },
-      { text: 'Ex-girlfriend shows up at my door on a rainy New Year\'s Eve', role: 'Ex-GF' },
-      { text: 'The neighbor lady leans on me the whole time at the late-night store', role: 'Neighbor' },
+      { id: 'hot_01', text: 'My cold boss suddenly gets tender during overtime at the office', role: 'Boss' },
+      { id: 'hot_02', text: 'Late night, my junior whispers "Senpai… my roommate isn\'t coming back tonight"', role: 'Junior' },
+      { id: 'hot_03', text: 'Ex-girlfriend shows up at my door on a rainy New Year\'s Eve', role: 'Ex-GF' },
+      { id: 'hot_04', text: 'The neighbor lady leans on me the whole time at the late-night store', role: 'Neighbor' },
     ],
     office: [
-      { text: 'My boss passes me a note through the glass, smiling the whole time', role: 'Boss' },
-      { text: 'The secretary accidentally leans in while sorting files', role: 'Secretary' },
-      { text: 'Last one working late—the CEO says "Let me take you home"', role: 'Boss' },
-      { text: 'Intern sends the wrong file, boss says "Step into my office"', role: 'Boss' },
+      { id: 'office_01', text: 'My boss passes me a note through the glass, smiling the whole time', role: 'Boss' },
+      { id: 'office_02', text: 'The secretary accidentally leans in while sorting files', role: 'Secretary' },
+      { id: 'office_03', text: 'Last one working late—the CEO says "Let me take you home"', role: 'Boss' },
+      { id: 'office_04', text: 'Intern sends the wrong file, boss says "Step into my office"', role: 'Boss' },
     ],
     campus: [
-      { text: 'A girl moves next to me in the library and whispers "Can you help me with this?"', role: 'Junior' },
-      { text: 'My dormmate says "It\'s just us who haven\'t eaten yet, let\'s go together"', role: 'Dormmate' },
-      { text: 'The class beauty forgot something and casually takes off her jacket in front of me', role: 'Beauty' },
-      { text: 'She says "I just wanted to ask you one thing" with her eyes fixed on mine', role: 'Junior' },
+      { id: 'campus_01', text: 'A girl moves next to me in the library and whispers "Can you help me with this?"', role: 'Junior' },
+      { id: 'campus_02', text: 'My dormmate says "It\'s just us who haven\'t eaten yet, let\'s go together"', role: 'Dormmate' },
+      { id: 'campus_03', text: 'The class beauty forgot something and casually takes off her jacket in front of me', role: 'Beauty' },
+      { id: 'campus_04', text: 'She says "I just wanted to ask you one thing" with her eyes fixed on mine', role: 'Junior' },
     ],
     fantasy: [
-      { text: 'Coming home late, I run into my neighbor who says "Don\'t worry, I live right next door"', role: 'Neighbor' },
-      { text: 'The goddess says if I win two rounds, she\'ll take me straight home', role: 'Goddess' },
-      { text: 'Teacher and I walk into the archive room—just the two of us', role: 'Teacher' },
-      { text: 'My ex sends 19 messages overnight—the last one is just three words', role: 'Ex-GF' },
+      { id: 'fantasy_01', text: 'Coming home late, I run into my neighbor who says "Don\'t worry, I live right next door"', role: 'Neighbor' },
+      { id: 'fantasy_02', text: 'The goddess says if I win two rounds, she\'ll take me straight home', role: 'Goddess' },
+      { id: 'fantasy_03', text: 'Teacher and I walk into the archive room—just the two of us', role: 'Teacher' },
+      { id: 'fantasy_04', text: 'My ex sends 19 messages overnight—the last one is just three words', role: 'Ex-GF' },
     ],
   },
 }
@@ -325,6 +330,7 @@ export default function HomePage() {
     lang,
   } = useApp()
   const L = useL()
+  const navigate = useNavigate()
   const d = (item, field) => (lang === 'en' && item?.[field + 'En']) || item?.[field]
   const promptTabs = PROMPT_TABS[lang] || PROMPT_TABS.zh
   const promptSugs = PROMPT_SUGGESTIONS[lang] || PROMPT_SUGGESTIONS.zh
@@ -336,6 +342,7 @@ export default function HomePage() {
   const [customPrompt,     setCustomPrompt]     = useState('')
   const [showSuggestions,  setShowSuggestions]  = useState(false)
   const [suggestionTab,    setSuggestionTab]    = useState('hot')
+  const [selectedPresetId, setSelectedPresetId] = useState(null)
   // generatedScripts: 由全局 AppContext 提供
   // isGenerating / genProgress / genPhase: 由全局 AppContext 提供
 
@@ -746,8 +753,52 @@ export default function HomePage() {
 
   // ── 自定义剧本生成（B方案：Grok + Fish Audio 两段式进度）────
   const handleGenerate = useCallback(async () => {
-    if (!customPrompt.trim()) {
+    const prompt = customPrompt.trim()
+    if (!prompt) {
       alert(L('✨ 请先描述你的幻想场景和角色，让 AI 为你创造专属剧本。', '✨ Please describe your fantasy scene and characters first.'))
+      return
+    }
+
+    const allPresetSuggestions = Object.values(promptSugs).flat()
+    const selectedPreset = allPresetSuggestions.find((s) => s.id === selectedPresetId && s.text === prompt)
+      || allPresetSuggestions.find((s) => s.text === prompt)
+
+    if (selectedPreset?.id) {
+      setIsGenerating(true)
+      setGeneratedScripts([])
+      setGenProgress(12)
+      setGenPhase('audio')
+
+      if (genTimerRef.current) clearInterval(genTimerRef.current)
+      if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
+
+      genTimerRef.current = setInterval(() => {
+        setGenProgress((p) => Math.min(p + 12, 88))
+      }, 500)
+
+      try {
+        const result = await preparePresetVoiceAudio(selectedPreset.id, { lang })
+        clearInterval(genTimerRef.current)
+        genTimerRef.current = null
+        if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
+        setGenProgress(100)
+        setGenPhase(null)
+        setIsGenerating(false)
+        navigate('/player', {
+          state: {
+            autoStart: true,
+            presetVoice: true,
+            script: result.script,
+          },
+        })
+      } catch (err) {
+        clearInterval(genTimerRef.current)
+        genTimerRef.current = null
+        if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
+        setIsGenerating(false)
+        setGenPhase(null)
+        alert(L(`✨ 语音准备失败：${err.message}`, `✨ Voice failed: ${err.message}`))
+      }
       return
     }
 
@@ -772,7 +823,7 @@ export default function HomePage() {
 
     let character
     try {
-      const result = await generateScriptTextApi(customPrompt.trim())
+      const result = await generateScriptTextApi(prompt)
       character = result.character
     } catch (err) {
       clearInterval(genTimerRef.current)
@@ -872,7 +923,7 @@ export default function HomePage() {
       setGenPhase('done')
     }
     // isGenerating 保持 true，等用户点"现在进入"按钮后再 false
-  }, [customPrompt])
+  }, [customPrompt, selectedPresetId, promptSugs, lang, navigate])
 
   // ── 定制剧本：点击"开始互动" ──────────────────────────────
   // 根据已选角色 + 场景动态构造脚本对象，复用 enterInteract 逻辑
@@ -1036,7 +1087,11 @@ export default function HomePage() {
                 <input
                   type="text"
                   value={customPrompt}
-                  onChange={(e) => { setCustomPrompt(e.target.value); if (e.target.value) setShowSuggestions(false) }}
+                  onChange={(e) => {
+                    setCustomPrompt(e.target.value)
+                    setSelectedPresetId(null)
+                    if (e.target.value) setShowSuggestions(false)
+                  }}
                   onFocus={() => { if (!customPrompt) setShowSuggestions(true) }}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerate()}
@@ -1074,8 +1129,13 @@ export default function HomePage() {
                     <div className="p-2 space-y-1">
                       {promptSugs[suggestionTab].map((s, i) => (
                         <button
-                          key={i}
-                          onMouseDown={e => { e.preventDefault(); setCustomPrompt(s.text); setShowSuggestions(false) }}
+                          key={s.id || i}
+                          onMouseDown={e => {
+                            e.preventDefault()
+                            setCustomPrompt(s.text)
+                            setSelectedPresetId(s.id || null)
+                            setShowSuggestions(false)
+                          }}
                           className="w-full text-left px-3 py-2 rounded-xl text-xs text-[rgba(245,240,242,0.8)] hover:bg-white/8 active:scale-[0.98] transition-all leading-snug border border-transparent hover:border-white/10"
                         >
                           <span className="inline-block mr-2 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-[#FF2A6D]/20 text-[#FF7DAF] border border-[#FF2A6D]/25 align-middle">{s.role}</span>
