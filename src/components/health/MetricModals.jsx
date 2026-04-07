@@ -5,6 +5,15 @@ import {
   INTENSITY_DETAIL,
   HARD_DETAIL,
 } from '../../data/healthData'
+import { useApp } from '../../context/AppContext'
+import { useL } from '../../i18n/useL'
+
+function useHealthLocale() {
+  const { lang } = useApp()
+  const L = useL()
+  const d = (item, field) => (lang === 'en' && item?.[`${field}En`]) || item?.[field]
+  return { L, d }
+}
 
 function Stars({ score, max = 5 }) {
   return (
@@ -17,6 +26,7 @@ function Stars({ score, max = 5 }) {
 }
 
 function DurationModalContent() {
+  const { L, d: localized } = useHealthLocale()
   const maxSecs = Math.max(...DURATION_DETAIL.days.map((d) => d.secs))
   return (
     <div className="space-y-4">
@@ -24,7 +34,7 @@ function DurationModalContent() {
         {DURATION_DETAIL.days.map((d) => (
           <div key={d.day} className="flex items-center gap-2">
             <span className={`text-[10px] w-7 flex-shrink-0 ${d.isToday ? 'text-[#FF9ACB] font-bold' : 'text-[rgba(245,240,242,0.5)]'}`}>
-              {d.day}
+              {localized(d, 'day')}
             </span>
             <div className="flex-1 h-2 bg-[rgba(255,255,255,0.06)] rounded-full overflow-hidden">
               <div
@@ -45,28 +55,29 @@ function DurationModalContent() {
       </div>
       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[rgba(255,255,255,0.06)]">
         <div className="rounded-xl p-3 bg-[rgba(255,255,255,0.04)] text-center">
-          <p className="text-[9px] text-[rgba(245,240,242,0.4)] mb-1">近7天平均</p>
+          <p className="text-[9px] text-[rgba(245,240,242,0.4)] mb-1">{L('近7天平均', '7-day average')}</p>
           <p className="text-sm font-bold text-[rgba(245,240,242,0.9)]">{DURATION_DETAIL.avgDisplay}</p>
         </div>
         <div className="rounded-xl p-3 bg-[rgba(255,255,255,0.04)] text-center">
-          <p className="text-[9px] text-[rgba(245,240,242,0.4)] mb-1">建议目标</p>
+          <p className="text-[9px] text-[rgba(245,240,242,0.4)] mb-1">{L('建议目标', 'Suggested target')}</p>
           <p className="text-sm font-bold text-[#7fcb9a]">{DURATION_DETAIL.targetDisplay}</p>
         </div>
       </div>
       <p className="text-[10px] text-[rgba(245,240,242,0.4)] leading-relaxed">
-        💡 {DURATION_DETAIL.targetNote}
+        💡 {localized(DURATION_DETAIL, 'targetNote')}
       </p>
     </div>
   )
 }
 
 function StatusModalContent() {
+  const { L, d: localized } = useHealthLocale()
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-7 gap-1">
         {STATUS_DETAIL.days.map((d) => (
           <div key={d.day} className="flex flex-col items-center gap-1.5">
-            <span className={`text-[9px] font-semibold ${d.color}`}>{d.status}</span>
+            <span className={`text-[9px] font-semibold ${d.color}`}>{localized(d, 'status')}</span>
             <div
               className="w-1.5 h-8 rounded-full"
               style={{
@@ -75,16 +86,16 @@ function StatusModalContent() {
               }}
             />
             <span className={`text-[8px] ${d.isToday ? 'text-[#FF9ACB] font-bold' : 'text-[rgba(245,240,242,0.35)]'}`}>
-              {d.day}
+              {localized(d, 'day')}
             </span>
           </div>
         ))}
       </div>
       <div className="pt-2 border-t border-[rgba(255,255,255,0.06)] space-y-2">
-        <p className="text-[10px] text-[rgba(245,240,242,0.4)] tracking-wider">近7天状态分布</p>
+        <p className="text-[10px] text-[rgba(245,240,242,0.4)] tracking-wider">{L('近7天状态分布', '7-day status distribution')}</p>
         {STATUS_DETAIL.distribution.map((item) => (
           <div key={item.label} className="flex items-center gap-2">
-            <span className="text-[10px] w-6 font-medium" style={{ color: item.color }}>{item.label}</span>
+            <span className="text-[10px] w-10 font-medium" style={{ color: item.color }}>{localized(item, 'label')}</span>
             <div className="flex-1 h-2 bg-[rgba(255,255,255,0.06)] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
@@ -92,7 +103,7 @@ function StatusModalContent() {
               />
             </div>
             <span className="text-[10px] text-[rgba(245,240,242,0.4)] w-8 text-right">{item.pct}%</span>
-            <span className="text-[9px] text-[rgba(245,240,242,0.3)]">{item.count}次</span>
+            <span className="text-[9px] text-[rgba(245,240,242,0.3)]">{L(`${item.count}次`, `${item.count}x`)}</span>
           </div>
         ))}
       </div>
@@ -101,23 +112,24 @@ function StatusModalContent() {
 }
 
 function IntensityModalContent() {
+  const { L, d: localized } = useHealthLocale()
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         {INTENSITY_DETAIL.days.map((d) => (
           <div key={d.day} className="flex items-center gap-3">
             <span className={`text-[10px] w-7 flex-shrink-0 ${d.isToday ? 'text-[#FF9ACB] font-bold' : 'text-[rgba(245,240,242,0.5)]'}`}>
-              {d.day}
+              {localized(d, 'day')}
             </span>
             <Stars score={d.score} />
             <span className={`text-[10px] ${d.isToday ? 'text-[#FF9ACB]' : 'text-[rgba(179,128,255,0.7)]'}`}>
-              {d.label}
+              {localized(d, 'label')}
             </span>
           </div>
         ))}
       </div>
       <div className="pt-2 border-t border-[rgba(255,255,255,0.06)] space-y-2">
-        <p className="text-[10px] text-[rgba(245,240,242,0.4)] tracking-wider">与平台平均对比</p>
+        <p className="text-[10px] text-[rgba(245,240,242,0.4)] tracking-wider">{L('与平台平均对比', 'Compared with platform average')}</p>
         <div className="flex items-end gap-6 justify-center py-2">
           <div className="flex flex-col items-center gap-1">
             <div
@@ -128,7 +140,7 @@ function IntensityModalContent() {
               }}
             />
             <span className="text-[10px] font-bold text-[#FF9ACB]">{INTENSITY_DETAIL.myAvg}</span>
-            <span className="text-[9px] text-[rgba(245,240,242,0.4)]">我的均值</span>
+            <span className="text-[9px] text-[rgba(245,240,242,0.4)]">{L('我的均值', 'My average')}</span>
           </div>
           <div className="flex flex-col items-center gap-1">
             <div
@@ -139,11 +151,11 @@ function IntensityModalContent() {
               }}
             />
             <span className="text-[10px] font-bold text-[rgba(245,240,242,0.5)]">{INTENSITY_DETAIL.platformAvg}</span>
-            <span className="text-[9px] text-[rgba(245,240,242,0.4)]">平台均值</span>
+            <span className="text-[9px] text-[rgba(245,240,242,0.4)]">{L('平台均值', 'Platform average')}</span>
           </div>
         </div>
         <p className="text-[10px] text-[rgba(245,240,242,0.4)] leading-relaxed">
-          💡 {INTENSITY_DETAIL.note}
+          💡 {localized(INTENSITY_DETAIL, 'note')}
         </p>
       </div>
     </div>
@@ -151,22 +163,23 @@ function IntensityModalContent() {
 }
 
 function HardScoreModalContent() {
+  const { L, d: localized } = useHealthLocale()
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         {HARD_DETAIL.days.map((d) => (
           <div key={d.day} className="flex items-center gap-2 rounded-xl p-2 bg-[rgba(255,255,255,0.03)]">
             <span className={`text-[10px] w-7 flex-shrink-0 ${d.isToday ? 'text-[#FF9ACB] font-bold' : 'text-[rgba(245,240,242,0.5)]'}`}>
-              {d.day}
+              {localized(d, 'day')}
             </span>
             <div className="flex-1 flex items-center gap-3 text-[9px]">
               <div>
-                <span className="text-[rgba(245,240,242,0.35)]">疲软期 </span>
+                <span className="text-[rgba(245,240,242,0.35)]">{L('疲软期', 'Soft')} </span>
                 <span className="text-[rgba(245,240,242,0.7)] font-medium">{d.softSecs}s</span>
               </div>
               <div className="w-px h-4 bg-[rgba(255,255,255,0.1)]" />
               <div>
-                <span className="text-[rgba(245,240,242,0.35)]">强硬 </span>
+                <span className="text-[rgba(245,240,242,0.35)]">{L('强硬', 'Firm')} </span>
                 <span className="text-[rgba(245,240,242,0.7)] font-medium">{d.hardMin}m{d.hardSec}s</span>
               </div>
             </div>
@@ -179,9 +192,9 @@ function HardScoreModalContent() {
         ))}
       </div>
       <div className="rounded-xl p-3 pt-2 border-t border-[rgba(255,255,255,0.06)]">
-        <p className="text-[10px] text-[rgba(245,240,242,0.4)] mb-1 tracking-wider">评分趋势</p>
+        <p className="text-[10px] text-[rgba(245,240,242,0.4)] mb-1 tracking-wider">{L('评分趋势', 'Score trend')}</p>
         <p className="text-[11px] text-[rgba(245,240,242,0.75)] leading-relaxed">
-          📈 {HARD_DETAIL.trend}
+          📈 {localized(HARD_DETAIL, 'trend')}
         </p>
       </div>
     </div>
@@ -189,13 +202,14 @@ function HardScoreModalContent() {
 }
 
 export function MetricModal({ metric, onClose }) {
+  const L = useL()
   if (!metric) return null
 
   const MODAL_CONFIG = {
-    duration:  { title: '使用时长详情',   subtitle: '近 7 天时长明细',   content: <DurationModalContent /> },
-    status:    { title: '个人状态详情',   subtitle: '近 7 天状态变化',   content: <StatusModalContent /> },
-    intensity: { title: '内容激烈度详情', subtitle: '近 7 天激烈度评分', content: <IntensityModalContent /> },
-    hardScore: { title: '硬度评分详情',   subtitle: '近 7 天疲软 / 强硬度记录', content: <HardScoreModalContent /> },
+    duration:  { title: L('使用时长详情', 'Duration Details'),   subtitle: L('近 7 天时长明细', 'Last 7 days'),   content: <DurationModalContent /> },
+    status:    { title: L('个人状态详情', 'Personal Status Details'),   subtitle: L('近 7 天状态变化', 'Last 7 days'),   content: <StatusModalContent /> },
+    intensity: { title: L('内容激烈度详情', 'Content Intensity Details'), subtitle: L('近 7 天激烈度评分', 'Last 7 days'), content: <IntensityModalContent /> },
+    hardScore: { title: L('硬度评分详情', 'Hardness Score Details'),   subtitle: L('近 7 天疲软 / 强硬度记录', 'Last 7 days'), content: <HardScoreModalContent /> },
   }
 
   const { title, subtitle, content } = MODAL_CONFIG[metric]
@@ -232,7 +246,7 @@ export function MetricModal({ metric, onClose }) {
           onClick={onClose}
           className="mt-6 w-full py-3 rounded-2xl text-[12px] font-medium text-[rgba(245,240,242,0.6)] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] active:scale-[0.98] transition-all"
         >
-          关闭
+          {L('关闭', 'Close')}
         </button>
       </div>
     </div>

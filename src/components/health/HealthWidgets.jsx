@@ -1,7 +1,10 @@
 import { ChevronRight } from 'lucide-react'
-import { THINKING_STEPS } from '../../data/healthData'
+import { THINKING_STEPS, THINKING_STEPS_EN } from '../../data/healthData'
+import { useApp } from '../../context/AppContext'
+import { useL } from '../../i18n/useL'
 
 export function ScoreRing({ score }) {
+  const L = useL()
   const R    = 46
   const CIRC = 2 * Math.PI * R
   const offset = CIRC * (1 - score / 100)
@@ -27,13 +30,14 @@ export function ScoreRing({ score }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl font-bold text-[rgba(245,240,242,0.95)]">{score}</span>
-        <span className="text-[9px] text-[rgba(245,240,242,0.45)] tracking-wider">综合评分</span>
+        <span className="text-[9px] text-[rgba(245,240,242,0.45)] tracking-wider">{L('综合评分', 'Overall Score')}</span>
       </div>
     </div>
   )
 }
 
 export function MetricCell({ label, value, sub, color, onClick }) {
+  const L = useL()
   return (
     <button
       onClick={onClick}
@@ -43,12 +47,13 @@ export function MetricCell({ label, value, sub, color, onClick }) {
       <p className="text-[9px] text-[rgba(245,240,242,0.4)] mb-1">{label}</p>
       <p className={`text-xs font-bold ${color ?? 'text-[rgba(245,240,242,0.85)]'}`}>{value}</p>
       {sub && <p className="text-[9px] text-[rgba(245,240,242,0.35)] mt-0.5">{sub}</p>}
-      <p className="text-[8px] text-[rgba(179,128,255,0.45)] mt-1">详情 ›</p>
+      <p className="text-[8px] text-[rgba(179,128,255,0.45)] mt-1">{L('详情', 'Details')} ›</p>
     </button>
   )
 }
 
 export function PlanRow({ icon: Icon, title, sub, onDetail }) {
+  const L = useL()
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-[rgba(255,255,255,0.04)] last:border-0">
       <div className="w-8 h-8 rounded-xl bg-[rgba(255,154,203,0.1)] flex items-center justify-center flex-shrink-0">
@@ -62,13 +67,15 @@ export function PlanRow({ icon: Icon, title, sub, onDetail }) {
         onClick={onDetail}
         className="flex-shrink-0 flex items-center gap-0.5 text-[10px] text-[rgba(179,128,255,0.6)] hover:text-[#B380FF] transition-colors"
       >
-        详情 <ChevronRight size={11} />
+        {L('详情', 'Details')} <ChevronRight size={11} />
       </button>
     </div>
   )
 }
 
 export function ThinkingState({ step }) {
+  const { lang } = useApp()
+  const steps = lang === 'en' ? THINKING_STEPS_EN : THINKING_STEPS
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-4 animate-fadeUp">
       <div className="relative w-14 h-14 flex items-center justify-center">
@@ -83,10 +90,10 @@ export function ThinkingState({ step }) {
           key={step}
           className="text-[12px] text-[#B380FF] font-medium animate-fadeUp"
         >
-          {THINKING_STEPS[step]}
+          {steps[step]}
         </p>
         <div className="flex gap-1.5 justify-center mt-2">
-          {THINKING_STEPS.map((_, i) => (
+          {steps.map((_, i) => (
             <span
               key={i}
               className="inline-block h-1 rounded-full transition-all duration-300"
