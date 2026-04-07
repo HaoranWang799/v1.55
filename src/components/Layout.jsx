@@ -162,7 +162,7 @@ export default function Layout() {
                         strokeWidth={isActive ? 2.2 : 1.6}
                         className="transition-all duration-200"
                       />
-                      <span className="text-[10px] font-medium tracking-wide">
+                      <span className="text-[9px] sm:text-[10px] font-medium tracking-wide max-w-full truncate px-0.5">
                         {label}
                       </span>
                     </>

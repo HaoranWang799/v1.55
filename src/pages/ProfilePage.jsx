@@ -60,17 +60,17 @@ export default function ProfilePage() {
     newBadge: '全新发售',
     activeBadge: '已激活',
   } : {
-    temp: 'Temp 38.5°C, heart warming up...',
-    deviceTitle: 'Connected: Dedicated Device',
-    deviceSub: 'Stable Online · Sync 95%',
+    temp: 'Heart warming up · 38.5°C',
+    deviceTitle: 'Connected Device',
+    deviceSub: 'Online · 95% Sync',
     deviceActivity: 'Device Activity',
     syncStatus: 'In Sync',
     syncRate: 'Sync Rate',
     lastSession: 'Last Session',
     justNow: 'Just now',
-    inviteTitle: 'Invite Friends · Unlock',
-    inviteHighlight: 'Exclusive Rewards',
-    inviteDesc: { prefix: 'Give ', days: '7 Days', mid: ', Earn ', reward: '$50', suffix: ' Bonus' },
+    inviteTitle: 'Invite & Earn',
+    inviteHighlight: 'Rewards',
+    inviteDesc: { prefix: 'Give ', days: '7 Days', mid: ' · Earn ', reward: '$50', suffix: '' },
     shareBtn: 'Share',
     menu: [
       { title: 'Membership', items: [
@@ -90,7 +90,7 @@ export default function ProfilePage() {
       ]},
     ],
     vipTitle: 'Premium Membership',
-    vipDesc: 'Unlock richer interactions, exclusive stories & priority response',
+    vipDesc: 'Unlock richer interactions and priority response',
     vipSub: 'Tonight, get a little closer to her',
     vipBtn: 'Activate Membership',
     logoutBtn: 'Disconnect & End Session',
@@ -159,11 +159,11 @@ export default function ProfilePage() {
           <div className="absolute inset-0 rounded-full bg-[#FF2A6D] blur-md opacity-20 animate-pulse" />
           AR
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-[#F9EDF5] tracking-wide">Alex Rivera</h1>
-          <p className="text-sm flex items-center mt-0.5 text-[#FF2A6D]/90 animate-pulse font-medium">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-[#F9EDF5] tracking-wide truncate">Alex Rivera</h1>
+          <p className="text-sm flex items-center mt-0.5 text-[#FF2A6D]/90 animate-pulse font-medium min-w-0">
             <Flame size={13} className="mr-1" />
-            {T.temp}
+            <span className="truncate">{T.temp}</span>
           </p>
         </div>
       </div>
@@ -173,33 +173,33 @@ export default function ProfilePage() {
         <div className="bg-[#1E1324]/80 backdrop-blur-md border border-[#FF2A6D]/30 rounded-2xl p-4 shadow-[0_8px_30px_rgba(255,42,109,0.15)] relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-[#FF2A6D]/5 to-transparent opacity-50" />
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#FF2A6D]/20 relative z-10">
-            <div className="flex items-center space-x-3 text-sm">
+            <div className="flex items-center space-x-3 text-sm min-w-0">
               <div className="p-2 bg-[#FF2A6D]/20 rounded-xl text-[#FF2A6D] shadow-[0_0_15px_rgba(255,42,109,0.3)]">
                 <Flame size={18} />
               </div>
-              <div>
-                <div className="text-[#F9EDF5] font-semibold">{T.deviceTitle}</div>
-                <div className="text-[11px] text-[#FF2A6D] mt-0.5 animate-pulse drop-shadow-[0_0_5px_#FF2A6D]">{T.deviceSub}</div>
+              <div className="min-w-0">
+                <div className="text-[#F9EDF5] font-semibold truncate">{T.deviceTitle}</div>
+                <div className="text-[11px] text-[#FF2A6D] mt-0.5 animate-pulse drop-shadow-[0_0_5px_#FF2A6D] truncate">{T.deviceSub}</div>
               </div>
             </div>
             <ChevronRight size={16} className="text-[#9B859D]" />
           </div>
           <div className="flex justify-between text-center px-2 relative z-10">
-            <div>
+            <div className="min-w-0">
               <div className="text-lg font-bold text-[#FF2A6D] mb-1">87%</div>
-              <div className="text-[11px] text-[#9B859D] flex items-center justify-center">
+              <div className="text-[11px] text-[#9B859D] flex items-center justify-center min-w-0">
                 <Battery size={11} className="mr-1" />{T.deviceActivity}
               </div>
             </div>
-            <div>
-              <div className="text-lg font-bold text-[#A87CFF] mb-1 drop-shadow-[0_0_8px_rgba(168,124,255,0.6)]">{T.syncStatus}</div>
-              <div className="text-[11px] text-[#9B859D] flex items-center justify-center">
+            <div className="min-w-0">
+              <div className="text-lg font-bold text-[#A87CFF] mb-1 drop-shadow-[0_0_8px_rgba(168,124,255,0.6)] truncate">{T.syncStatus}</div>
+              <div className="text-[11px] text-[#9B859D] flex items-center justify-center min-w-0">
                 <Wifi size={11} className="mr-1" />{T.syncRate}
               </div>
             </div>
-            <div>
-              <div className="text-lg font-bold text-[#F9EDF5] mb-1">{T.justNow}</div>
-              <div className="text-[11px] text-[#9B859D]">{T.lastSession}</div>
+            <div className="min-w-0">
+              <div className="text-lg font-bold text-[#F9EDF5] mb-1 truncate">{T.justNow}</div>
+              <div className="text-[11px] text-[#9B859D] truncate">{T.lastSession}</div>
             </div>
           </div>
         </div>
@@ -214,10 +214,11 @@ export default function ProfilePage() {
               <Gift size={20} className="fill-current" />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-bold text-[#F9EDF5] mb-0.5 whitespace-nowrap">
-                {T.inviteTitle}<span className="text-[#FFD700]">{T.inviteHighlight}</span>
+              <div className="text-sm font-bold text-[#F9EDF5] mb-0.5 flex items-center gap-1 min-w-0">
+                <span className="truncate">{T.inviteTitle}</span>
+                <span className="text-[#FFD700] shrink-0">{T.inviteHighlight}</span>
               </div>
-              <div className="text-[10px] text-[#9B859D]">
+              <div className="text-[10px] text-[#9B859D] truncate">
                 {T.inviteDesc.prefix}<span className="text-[#FFD700]">{T.inviteDesc.days}</span>{T.inviteDesc.mid}<span className="text-[#FFD700]">{T.inviteDesc.reward}</span>{T.inviteDesc.suffix}
               </div>
             </div>
@@ -244,11 +245,11 @@ export default function ProfilePage() {
                     i !== section.items.length - 1 ? 'border-b border-[#FF7DAF]/5' : ''
                   }`}
                 >
-                  <div className="flex items-center space-x-3 text-sm text-[#F9EDF5]">
-                    <div className="text-[#FF7DAF]"><item.icon size={18} /></div>
-                    <span className="font-medium">{item.label}</span>
+                  <div className="flex items-center space-x-3 text-sm text-[#F9EDF5] min-w-0">
+                    <div className="text-[#FF7DAF] shrink-0"><item.icon size={18} /></div>
+                    <span className="font-medium truncate">{item.label}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 shrink-0">
                     {item.value === T.premiumBadge && (
                       <span className="bg-gradient-to-r from-[#FF7DAF] to-[#A87CFF] text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-[0_0_8px_rgba(255,125,175,0.5)]">
                         {T.premiumBadge}
