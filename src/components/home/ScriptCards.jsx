@@ -1,7 +1,7 @@
 /**
  * 剧本卡片组件（从 HomePage.jsx 提取）
  */
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useL } from '../../i18n/useL'
@@ -16,6 +16,23 @@ export function ScriptCard({ script, onClick }) {
   const d = (item, field) => (lang === 'en' && item?.[field + 'En']) || item?.[field]
   const isVideo = CARD_VIDEO_IDS.includes(script.id)
   const [imgSrc, setImgSrc] = useState(`/images/covers/${script.id}.jpg`)
+  const videoRef = useRef(null)
+
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          videoRef.current?.play().catch(() => {})
+        } else {
+          videoRef.current?.pause()
+        }
+      },
+      { threshold: 0.25 }
+    )
+    observer.observe(videoRef.current)
+    return () => observer.disconnect()
+  }, [isVideo])
 
   return (
     <button
@@ -24,7 +41,10 @@ export function ScriptCard({ script, onClick }) {
     >
       {isVideo && (
         <video
-          autoPlay loop muted playsInline
+          ref={videoRef}
+          loop muted playsInline
+          preload="none"
+          poster={`/images/covers/${script.id}.jpg`}
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src={`/videos/${script.id}.mp4`} type="video/mp4" />
