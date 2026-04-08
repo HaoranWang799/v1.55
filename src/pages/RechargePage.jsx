@@ -48,6 +48,7 @@ const getDIAMOND_TIERS = (L) => [
 const getMEMBER_TIERS = (L) => [
   {
     id: 'm1',
+    value: '心动会员',
     level: L('心动会员', 'Heart Member'),
     emoji: '💕',
     isFree: true,
@@ -64,6 +65,7 @@ const getMEMBER_TIERS = (L) => [
   },
   {
     id: 'm2',
+    value: '热恋会员',
     level: L('热恋会员', 'Passion Member'),
     emoji: '🔥',
     isFree: false,
@@ -82,6 +84,7 @@ const getMEMBER_TIERS = (L) => [
   },
   {
     id: 'm3',
+    value: '灵魂伴侣',
     level: L('灵魂伴侣', 'Soul Partner'),
     emoji: '👑',
     isFree: false,
@@ -100,6 +103,27 @@ const getMEMBER_TIERS = (L) => [
     highlight: true,
   },
 ]
+
+function getLocalizedMemberLevel(level, L) {
+  const memberMap = {
+    '心动会员': L('心动会员', 'Heart Member'),
+    '热恋会员': L('热恋会员', 'Passion Member'),
+    '灵魂伴侣': L('灵魂伴侣', 'Soul Partner'),
+    'Heart Member': L('心动会员', 'Heart Member'),
+    'Passion Member': L('热恋会员', 'Passion Member'),
+    'Soul Partner': L('灵魂伴侣', 'Soul Partner'),
+  }
+  return memberMap[level] || level
+}
+
+function getCanonicalMemberLevel(level) {
+  const memberMap = {
+    'Heart Member': '心动会员',
+    'Passion Member': '热恋会员',
+    'Soul Partner': '灵魂伴侣',
+  }
+  return memberMap[level] || level
+}
 
 // ═══════════════════════════════════════════════════════════
 //  子组件
@@ -156,7 +180,7 @@ function DiamondCard({ tier, onRecharge }) {
 /** 会员等级卡片 */
 function MemberCard({ tier, currentLevel, onActivate }) {
   const L = useL()
-  const isActive  = currentLevel === tier.level
+  const isActive  = getCanonicalMemberLevel(currentLevel) === tier.value
   const isCurrent = isActive
   return (
     <div
@@ -235,6 +259,7 @@ export default function RechargePage() {
   const L = useL()
   const DIAMOND_TIERS = getDIAMOND_TIERS(L)
   const MEMBER_TIERS = getMEMBER_TIERS(L)
+  const localizedUserLevel = getLocalizedMemberLevel(userLevel, L)
 
   // ── 充值处理 ─────────────────────────────────────────────
   // TODO: 替换为真实支付 API（/api/payment/recharge）
@@ -246,7 +271,7 @@ export default function RechargePage() {
   // ── 开通会员 ─────────────────────────────────────────────
   // TODO: 替换为真实订阅 API（/api/membership/subscribe）
   const handleActivate = (tier) => {
-    setUserLevel(tier.level)
+    setUserLevel(tier.value)
     alert(L(`🎉 恭喜开通「${tier.level}」！\n权益已立即生效，享受你的专属体验～`, `🎉 ${tier.level} activated!\nBenefits are now active. Enjoy your exclusive experience!`))
   }
 
@@ -294,7 +319,7 @@ export default function RechargePage() {
             </div>
             <div className="flex items-center gap-1.5">
               <Crown size={13} style={{ color: '#FFD700' }} />
-              <span className="text-[11px] font-medium text-[rgba(245,240,242,0.7)]">{userLevel}</span>
+              <span className="text-[11px] font-medium text-[rgba(245,240,242,0.7)]">{localizedUserLevel}</span>
             </div>
           </div>
 
@@ -321,7 +346,7 @@ export default function RechargePage() {
             <div className="flex items-center gap-2 mb-3">
               <Crown size={15} style={{ color: '#FFD700' }} />
               <h2 className="text-sm font-semibold text-[rgba(245,240,242,0.85)]">{L('会员等级', 'Membership Tier')}</h2>
-              <span className="text-[10px] text-[rgba(245,240,242,0.4)]">{L('当前：', 'Current: ')}{userLevel}</span>
+              <span className="text-[10px] text-[rgba(245,240,242,0.4)]">{L('当前：', 'Current: ')}{localizedUserLevel}</span>
             </div>
             {/* TODO: 接入真实会员订阅 API（/api/membership/subscribe） */}
             <div className="space-y-4">
