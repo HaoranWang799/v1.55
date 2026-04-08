@@ -36,7 +36,7 @@ export default function HealthPage() {
     isCurrentPlanUpgrading,
     lastPlanMeta,
     handleGeneratePlan,
-  } = usePlanPool(buildHealthPlanPayload)
+  } = usePlanPool(buildHealthPlanPayload, lang)
 
   // ── 切换动画期间循环切换 ThinkingState 步骤 ────────────
   const [thinkingStep, setThinkingStep] = useState(0)
@@ -304,7 +304,7 @@ export default function HealthPage() {
                 </p>
               ) : null}
               <p className="mt-3 text-[14px] leading-[1.75] text-[rgba(245,240,242,0.72)]">
-                {currentPlan?.summary}
+                {d(currentPlan, 'summary')}
               </p>
             </div>
 
@@ -312,7 +312,7 @@ export default function HealthPage() {
             <div className="mb-3">
               <div className="flex items-center gap-1.5 mb-2">
                 <Utensils size={12} className="text-[rgba(245,240,242,0.4)]" />
-                <p className="text-[10px] text-[rgba(245,240,242,0.45)] tracking-wider">{L('饮食建议', 'Diet Suggestions')} — {currentPlan?.dietFocus || L('恢复优先', 'Recovery First')}</p>
+                <p className="text-[10px] text-[rgba(245,240,242,0.45)] tracking-wider">{L('饮食建议', 'Diet Suggestions')} — {d(currentPlan, 'dietFocus') || L('恢复优先', 'Recovery First')}</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {diet.map((item) => (
@@ -320,8 +320,8 @@ export default function HealthPage() {
                     key={item.name}
                     className="rounded-xl p-2.5 bg-[rgba(255,255,255,0.04)] flex flex-col gap-1"
                   >
-                    <p className="text-[11px] font-semibold text-[rgba(245,240,242,0.85)]">{item.name}</p>
-                    <p className="text-[9px] text-[rgba(245,240,242,0.4)] leading-relaxed">{item.benefit}</p>
+                    <p className="text-[11px] font-semibold text-[rgba(245,240,242,0.85)]">{d(item, 'name')}</p>
+                    <p className="text-[9px] text-[rgba(245,240,242,0.4)] leading-relaxed">{d(item, 'benefit')}</p>
                   </div>
                 ))}
               </div>
@@ -341,9 +341,9 @@ export default function HealthPage() {
                   <PlanRow
                     key={item.name}
                     icon={Dumbbell}
-                    title={item.name}
-                    sub={item.plan}
-                    onDetail={() => alert(`📋 ${item.name}\n${item.plan}\n\n${L('推荐原因：', 'Reason: ')}${item.reason || L('根据你的近期数据匹配该训练。', 'Matched based on your recent data.')}`)}
+                    title={d(item, 'name')}
+                    sub={d(item, 'plan')}
+                    onDetail={() => alert(`📋 ${d(item, 'name')}\n${d(item, 'plan')}\n\n${L('推荐原因：', 'Reason: ')}${d(item, 'reason') || L('根据你的近期数据匹配该训练。', 'Matched based on your recent data.')}`)}
                   />
                 ))}
               </div>
@@ -365,11 +365,11 @@ export default function HealthPage() {
                   style={{ background: 'linear-gradient(135deg, rgba(255,154,203,0.08), rgba(179,128,255,0.08))' }}
                 >
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-[#FF9ACB] mb-0.5">{vib.mode}</p>
-                    <p className="text-[10px] text-[rgba(245,240,242,0.5)] leading-relaxed">{vib.desc}</p>
+                    <p className="text-xs font-semibold text-[#FF9ACB] mb-0.5">{d(vib, 'mode')}</p>
+                    <p className="text-[10px] text-[rgba(245,240,242,0.5)] leading-relaxed">{d(vib, 'desc')}</p>
                   </div>
                   <button
-                    onClick={() => alert(`🎛️ ${L('震动模式：', 'Vibration mode: ')}${vib.mode}\n${vib.desc}\n\n${L('推荐原因：', 'Reason: ')}${vib.reason || L('已结合你的近期状态和训练目标调整。', 'Adjusted based on your recent status and training goals.')}`)}
+                    onClick={() => alert(`🎛️ ${L('震动模式：', 'Vibration mode: ')}${d(vib, 'mode')}\n${d(vib, 'desc')}\n\n${L('推荐原因：', 'Reason: ')}${d(vib, 'reason') || L('已结合你的近期状态和训练目标调整。', 'Adjusted based on your recent status and training goals.')}`)}
                     className="flex-shrink-0 flex items-center gap-1 text-[10px] text-[rgba(179,128,255,0.6)] hover:text-[#B380FF] transition-colors"
                   >
                     {L('详情', 'Details')} <ChevronRight size={11} />

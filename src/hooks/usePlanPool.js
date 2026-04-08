@@ -12,15 +12,29 @@ import { fetchHealthPlan } from '../api/healthPlan'
 const SWITCH_DURATION = 1700 // 思考动画时长
 const HEALTH_PLAN_SESSION_KEY = 'health_plan_session_state'
 
+function resolveLang(lang) {
+  return lang === 'en' ? 'en' : 'zh'
+}
+
+function getStoredPlanLang(plan) {
+  return plan?.lang === 'en' ? 'en' : 'zh'
+}
+
+function getPlanSessionKey(lang) {
+  return `${HEALTH_PLAN_SESSION_KEY}_${resolveLang(lang)}`
+}
+
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function readStoredPlanState() {
+function readStoredPlanState(lang) {
   if (typeof window === 'undefined') return null
 
   try {
-    const raw = window.sessionStorage.getItem(HEALTH_PLAN_SESSION_KEY)
+    const activeLang = resolveLang(lang)
+    const raw = window.sessionStorage.getItem(getPlanSessionKey(activeLang))
+      || (activeLang === 'zh' ? window.sessionStorage.getItem(HEALTH_PLAN_SESSION_KEY) : null)
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return null
@@ -30,34 +44,48 @@ function readStoredPlanState() {
   }
 }
 
-function writeStoredPlanState(state) {
+function writeStoredPlanState(state, lang) {
   if (typeof window === 'undefined') return
 
   try {
-    window.sessionStorage.setItem(HEALTH_PLAN_SESSION_KEY, JSON.stringify(state))
+    window.sessionStorage.setItem(getPlanSessionKey(lang), JSON.stringify(state))
   } catch {
     // ignore storage failures
   }
 }
 
-export function usePlanPool(buildPayloadFn) {
-  const [currentPlan, setCurrentPlan] = useState(() => readStoredPlanState()?.currentPlan || null)
-  const [planVisible, setPlanVisible] = useState(() => Boolean(readStoredPlanState()?.planVisible && readStoredPlanState()?.currentPlan))
+export function usePlanPool(buildPayloadFn, lang = 'zh') {
+  const activeLang = resolveLang(lang)
+  const [currentPlan, setCurrentPlan] = useState(() => readStoredPlanState(activeLang)?.currentPlan || null)
+  const [planVisible, setPlanVisible] = useState(() => Boolean(readStoredPlanState(activeLang)?.planVisible && readStoredPlanState(activeLang)?.currentPlan))
   const [isSwitching, setIsSwitching] = useState(false)
-  const [isFallbackMode, setIsFallbackMode] = useState(() => Boolean(readStoredPlanState()?.isFallbackMode))
+  const [isFallbackMode, setIsFallbackMode] = useState(() => Boolean(readStoredPlanState(activeLang)?.isFallbackMode))
   const [isCurrentPlanUpgrading, setIsCurrentPlanUpgrading] = useState(false)
-  const [lastPlanMeta, setLastPlanMeta] = useState(() => readStoredPlanState()?.lastPlanMeta || null)
+  const [lastPlanMeta, setLastPlanMeta] = useState(() => readStoredPlanState(activeLang)?.lastPlanMeta || null)
 
   const requestIdRef = useRef(0)
 
   useEffect(() => {
+    const stored = readStoredPlanState(activeLang)
+    requestIdRef.current += 1
+    setCurrentPlan(stored?.currentPlan || null)
+    setPlanVisible(Boolean(stored?.planVisible && stored?.currentPlan))
+    setIsFallbackMode(Boolean(stored?.isFallbackMode))
+    setLastPlanMeta(stored?.lastPlanMeta || null)
+    setIsSwitching(false)
+    setIsCurrentPlanUpgrading(false)
+  }, [activeLang])
+
+  useEffect(() => {
+    if (currentPlan && getStoredPlanLang(currentPlan) !== activeLang) return
+
     writeStoredPlanState({
       currentPlan,
       planVisible,
       isFallbackMode,
       lastPlanMeta,
-    })
-  }, [currentPlan, planVisible, isFallbackMode, lastPlanMeta])
+    }, activeLang)
+  }, [currentPlan, planVisible, isFallbackMode, lastPlanMeta, activeLang])
 
   const handleGeneratePlan = useCallback(async () => {
     if (isSwitching) return
@@ -71,7 +99,10 @@ export function usePlanPool(buildPayloadFn) {
     setLastPlanMeta(null)
 
     try {
-      const payload = buildPayloadFn ? buildPayloadFn() : {}
+      const payload = {
+        ...(buildPayloadFn ? buildPayloadFn(activeLang) : {}),
+        lang: activeLang,
+      }
       const [response] = await Promise.all([
         fetchHealthPlan(payload),
         wait(SWITCH_DURATION),
@@ -80,10 +111,11 @@ export function usePlanPool(buildPayloadFn) {
       if (requestId !== requestIdRef.current) return
 
       if (response?.summary) {
-        setCurrentPlan(response)
+        const localizedResponse = { ...response, lang: activeLang }
+        setCurrentPlan(localizedResponse)
         setPlanVisible(true)
         setIsFallbackMode(Boolean(response.fallback))
-        setLastPlanMeta(response)
+        setLastPlanMeta(localizedResponse)
       }
     } catch (error) {
       if (requestId === requestIdRef.current) {
@@ -101,7 +133,7 @@ export function usePlanPool(buildPayloadFn) {
         setIsCurrentPlanUpgrading(false)
       }
     }
-  }, [buildPayloadFn, isSwitching])
+  }, [buildPayloadFn, isSwitching, activeLang])
 
   return {
     currentPlan,

@@ -170,18 +170,28 @@ export const THINKING_STEPS_EN = [
  * 构建健康计划生成请求的 payload
  * 用于调用 POST /api/health/plan
  */
-export function buildHealthPlanPayload() {
+export function buildHealthPlanPayload(lang = 'zh') {
+  const isEn = lang === 'en'
+
   return {
-    todayStats: TODAY_STATS,
-    weeklyTrend: BAR_DATA,
+    lang: isEn ? 'en' : 'zh',
+    todayStats: {
+      ...TODAY_STATS,
+      status: isEn ? TODAY_STATS.statusEn : TODAY_STATS.status,
+      intensity: isEn ? TODAY_STATS.intensityEn : TODAY_STATS.intensity,
+    },
+    weeklyTrend: BAR_DATA.map((item) => ({
+      ...item,
+      day: isEn ? item.dayEn : item.day,
+    })),
     detailSummary: {
       avgDuration: DURATION_DETAIL.avgDisplay,
       statusDistribution: STATUS_DETAIL.distribution
-        .map((item) => `${item.label}${item.pct}%`)
-        .join('、'),
+        .map((item) => `${isEn ? item.labelEn : item.label}${item.pct}%`)
+        .join(isEn ? ', ' : '、'),
       myAvgIntensity: INTENSITY_DETAIL.myAvg,
       platformAvgIntensity: INTENSITY_DETAIL.platformAvg,
-      hardTrend: HARD_DETAIL.trend,
+      hardTrend: isEn ? HARD_DETAIL.trendEn : HARD_DETAIL.trend,
     },
   }
 }

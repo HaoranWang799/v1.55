@@ -58,6 +58,7 @@ export async function generateLoverMessage(promptPayload, apiKeyOverride = '') {
 export async function generateHealthPlan(promptPayload, apiKeyOverride = '') {
   try {
     console.log('🔄 [GrokProvider] 生成健康计划...')
+    const activeLang = promptPayload?.lang === 'en' ? 'en' : 'zh'
 
     const result = await generateStructuredJson({
       ...promptPayload,
@@ -66,7 +67,7 @@ export async function generateHealthPlan(promptPayload, apiKeyOverride = '') {
 
     return {
       summary: clampText(result.summary, 280),
-      dietFocus: clampText(result.dietFocus || 'AI 饮食建议', 40),
+      dietFocus: clampText(result.dietFocus || (activeLang === 'en' ? 'AI Diet Suggestions' : 'AI 饮食建议'), 40),
       dietSuggestions: Array.isArray(result.dietSuggestions)
         ? result.dietSuggestions.slice(0, 4).map((item) => ({
             name: clampText(item?.name, 24),
@@ -81,10 +82,11 @@ export async function generateHealthPlan(promptPayload, apiKeyOverride = '') {
           })).filter((item) => item.name && item.plan)
         : [],
       nextVibrationMode: {
-        mode: clampText(result.nextVibrationMode?.mode || result.vibrationSuggestion?.mode || '稳定节奏', 24),
-        desc: clampText(result.nextVibrationMode?.desc || result.vibrationSuggestion?.desc || '中低频起步，逐步加速', 90),
-        reason: clampText(result.nextVibrationMode?.reason || result.vibrationSuggestion?.reason || '根据当前状态建议先稳后强', 90),
+        mode: clampText(result.nextVibrationMode?.mode || result.vibrationSuggestion?.mode || (activeLang === 'en' ? 'Steady Rhythm' : '稳定节奏'), 24),
+        desc: clampText(result.nextVibrationMode?.desc || result.vibrationSuggestion?.desc || (activeLang === 'en' ? 'Start low to mid frequency and build gradually' : '中低频起步，逐步加速'), 90),
+        reason: clampText(result.nextVibrationMode?.reason || result.vibrationSuggestion?.reason || (activeLang === 'en' ? 'Your current state is better suited to stable rhythm first' : '根据当前状态建议先稳后强'), 90),
       },
+      lang: activeLang,
     }
   } catch (error) {
     console.error('❌ [GrokProvider] 生成计划失败:', error.message)
