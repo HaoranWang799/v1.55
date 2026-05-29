@@ -45,7 +45,7 @@ export default function KycStatusCard({ className = '' }: Props) {
   const isVerified = status === 'verified'
   const isRejected = status === 'rejected'
   const isReview = status === 'under_review'
-  const targetPath = isVerified ? '/kyc/success' : isRejected ? '/kyc/rejected' : '/kyc'
+  const targetPath = isVerified ? '/kyc' : isRejected ? '/kyc/rejected' : '/kyc'
 
   return (
     <div className={`flex flex-col gap-stack-sm ${className}`}>
