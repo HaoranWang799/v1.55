@@ -44,7 +44,7 @@ export default function KycIdentityPage() {
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-[#0D0118] pb-[100px] font-sans text-on-surface">
       <div className="pointer-events-none fixed left-1/2 top-0 z-0 h-[300px] w-full max-w-[480px] -translate-x-1/2 bg-primary-container/10 blur-[100px]" />
-      <KycTopBar onBack={() => navigate('/kyc')} />
+      <KycTopBar onBack={() => navigate('/kyc/step1')} />
 
       <div className="z-10 flex flex-1 flex-col gap-stack-lg px-container-margin pt-stack-md">
         <section className="flex flex-col gap-stack-sm">

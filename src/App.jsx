@@ -30,6 +30,7 @@ import PlayerPage        from './pages/PlayerPage'
 import ChatPage          from './pages/ChatPage'
 import HelpCenterPage    from './pages/HelpCenterPage'
 import ReferralPage      from './pages/ReferralPage'
+import KycStatusHubPage  from './features/kyc/pages/KycStatusHubPage'
 import KycEntryPage      from './features/kyc/pages/KycEntryPage'
 import KycIdentityPage   from './features/kyc/pages/KycIdentityPage'
 import KycTermsPage      from './features/kyc/pages/KycTermsPage'
@@ -94,7 +95,8 @@ export default function App() {
         <Route path="ai-lover/chat"  element={<PageShell><ChatPage /></PageShell>} />
         <Route path="/help"           element={<PageShell><HelpCenterPage /></PageShell>} />
         <Route path="/referral"       element={<PageShell><ReferralPage /></PageShell>} />
-        <Route path="/kyc"            element={<KycShell><KycEntryPage /></KycShell>} />
+        <Route path="/kyc"            element={<KycShell><KycStatusHubPage /></KycShell>} />
+        <Route path="/kyc/step1"      element={<KycShell><KycEntryPage /></KycShell>} />
         <Route path="/kyc/identity"   element={<KycShell><KycIdentityPage /></KycShell>} />
         <Route path="/kyc/terms"      element={<KycShell><KycTermsPage /></KycShell>} />
         <Route path="/kyc/success"    element={<KycShell><KycSuccessPage /></KycShell>} />

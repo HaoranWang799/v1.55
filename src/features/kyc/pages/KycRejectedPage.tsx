@@ -16,7 +16,7 @@ export default function KycRejectedPage() {
           <button
             onClick={() => {
               setKycStatus('rejected')
-              navigate('/kyc/identity')
+              navigate('/kyc')
             }}
             className="mt-6 w-full rounded-full border border-[#ffb4ab]/50 bg-[#3a1f22] px-4 py-3 text-sm font-semibold text-[#ffdad6]"
           >
