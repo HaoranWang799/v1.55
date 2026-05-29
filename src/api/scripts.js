@@ -76,3 +76,15 @@ export async function preparePresetVoiceAudio(presetId, options = {}) {
   }
   return res.json()
 }
+
+export async function fetchPresetVoiceAudioPackages(options = {}) {
+  const params = new URLSearchParams()
+  params.set('lang', options.lang || 'zh')
+  const url = buildApiUrl(`/api/scripts/preset-audio?${params.toString()}`)
+  const res = await fetch(url)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error?.message || err.error || `预设语音列表加载失败 (${res.status})`)
+  }
+  return res.json()
+}

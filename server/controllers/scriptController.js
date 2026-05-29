@@ -4,7 +4,7 @@
 
 import { createReadStream } from 'fs'
 import { generateScript, generateScriptText, generateScriptAudio } from '../services/scriptService.js'
-import { getPresetVoiceAudioStream, preparePresetVoiceAudio } from '../services/presetAudioService.js'
+import { getPresetVoiceAudioStream, listPresetVoiceAudioPackages, preparePresetVoiceAudio } from '../services/presetAudioService.js'
 
 function sendAudioFile(req, res, file) {
   res.setHeader('Content-Type', 'audio/mpeg')
@@ -69,6 +69,17 @@ export async function preparePresetAudioHandler(req, res, next) {
     const result = await preparePresetVoiceAudio(presetId, {
       lang: String(req.body?.lang || 'zh').trim(),
       force: Boolean(req.body?.force),
+    })
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function listPresetAudioHandler(req, res, next) {
+  try {
+    const result = await listPresetVoiceAudioPackages({
+      lang: String(req.query?.lang || 'zh').trim(),
     })
     res.json(result)
   } catch (err) {

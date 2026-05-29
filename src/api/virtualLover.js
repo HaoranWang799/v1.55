@@ -4,63 +4,21 @@
  * 职责：
  *   • 调用后端 /api/lover/message 获取 Grok 文本生成结果
  *   • 调用后端 /api/lover/memory 清空记忆
- *   • 仅在请求失败时返回本地 fallback 结果
  */
 
 import { post, del, withRetry } from './client'
-
-// Mock 消息池（fallback 使用）
-const MOCK_MESSAGES = {
-  zh: [
-    '今天有点想你…',
-    '晚上好啊，今天累了吗？',
-    '我想你了，来陪我聊聊天吧…',
-    '今晚月色真美。',
-    '每天最开心的事就是等你上线。',
-    '你知道吗？我一直都在。',
-  ],
-  en: [
-    'I missed you a little today...',
-    'Good evening. Did today wear you out?',
-    'I missed you. Come talk with me for a while...',
-    'The moon is beautiful tonight.',
-    'The best part of my day is waiting for you to come online.',
-    'You know what? I have been right here.',
-  ],
-}
-
-const MOCK_MOODS = ['温柔', '暧昧', '调皮']
 
 function resolveLang(lang) {
   return lang === 'en' ? 'en' : 'zh'
 }
 
-function getDefaultText(lang) {
-  return resolveLang(lang) === 'en' ? 'I missed you a little today...' : '今天有点想你…'
-}
-
-function createLocalFallbackMessage(errorMessage = '', lang = 'zh') {
-  const messages = MOCK_MESSAGES[resolveLang(lang)]
-  const text = messages[Math.floor(Math.random() * messages.length)]
-  const mood = MOCK_MOODS[Math.floor(Math.random() * MOCK_MOODS.length)]
-  return {
-    text,
-    mood,
-    provider: 'fallback',
-    fallback: true,
-    timestamp: new Date().toISOString(),
-    error: errorMessage,
-    lang: resolveLang(lang),
-  }
-}
-
 function normalizeServerLoverPayload(serverData = {}, lang = 'zh') {
   return {
-    text: serverData.text || getDefaultText(lang),
+    text: serverData.text || '',
     mood: serverData.mood || '温柔',
-    provider: serverData.provider || 'fallback',
+    provider: serverData.provider || '',
     fallback: Boolean(serverData.fallback),
-    timestamp: serverData.timestamp || new Date().toISOString(),
+    timestamp: serverData.timestamp || '',
     error: serverData.error || '',
     lang: resolveLang(serverData.lang || lang),
   }
@@ -115,13 +73,8 @@ export async function fetchVirtualLoverMessage(options = {}) {
     })
     return normalized
   } catch (error) {
-    const fallbackResult = createLocalFallbackMessage(error.message, activeLang)
-    console.warn('❌ fetchVirtualLoverMessage 失败，使用本地 fallback:', {
-      reason: error.message,
-      provider: fallbackResult.provider,
-      fallback: fallbackResult.fallback,
-    })
-    return fallbackResult
+    console.warn('❌ fetchVirtualLoverMessage 失败:', error.message)
+    throw error
   }
 }
 
@@ -139,10 +92,10 @@ export async function clearVirtualLoverMemory() {
     })
     return response
   } catch (error) {
-    console.warn('❌ clearVirtualLoverMemory 失败，使用 mock 成功:', { reason: error.message })
+    console.warn('❌ clearVirtualLoverMemory 失败:', { reason: error.message })
     return {
-      success: true,
-      message: '记忆已清空（本地模式）',
+      success: false,
+      message: error.message,
     }
   }
 }
