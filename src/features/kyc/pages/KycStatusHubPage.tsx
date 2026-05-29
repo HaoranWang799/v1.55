@@ -22,7 +22,7 @@ const en: Record<KycStatus, StatusTexts> = {
 }
 
 const icons: Record<KycStatus, string> = { not_verified: 'lock', under_review: 'hourglass_top', verified: 'verified', rejected: 'error' }
-const ctaPaths: Record<KycStatus, string> = { not_verified: '/kyc/step1', under_review: '/kyc/step1', verified: '/kyc/step1', rejected: '/kyc/identity' }
+const ctaPaths: Record<KycStatus, string> = { not_verified: '/kyc/step1', under_review: '/kyc/step1', verified: '/kyc/step1', rejected: '/kyc/step1' }
 
 const supportedRegions = [
   { code: 'US', flag: '🇺🇸', name: 'United States', nameZh: '美国' },
@@ -43,6 +43,8 @@ const restrictedRegions = [
   { code: 'QA', flag: '🇶🇦', name: 'Qatar', nameZh: '卡塔尔' },
   { code: 'KW', flag: '🇰🇼', name: 'Kuwait', nameZh: '科威特' },
 ]
+
+const currentRegion = { code: 'US', flag: '🇺🇸', name: 'United States', nameZh: '美国' }
 
 const complianceItems = [
   { icon: '18_up_rating', en: '18+ Verification', zh: '18+ 验证' },
@@ -178,12 +180,14 @@ export default function KycStatusHubPage() {
               {lang === 'en' ? 'Current Region' : '当前地区'}
             </span>
             <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[#00E676]/30 bg-[#00E676]/10 text-lg font-bold text-[#00E676] shadow-[0_0_12px_rgba(0,230,118,0.2)]">
-                US
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[#00E676]/30 bg-[#00E676]/10 shadow-[0_0_12px_rgba(0,230,118,0.2)]">
+                <span className="text-[26px] leading-none" aria-label={currentRegion.name}>
+                  {currentRegion.flag}
+                </span>
               </div>
               <div className="flex-1">
                 <p className="font-body-lg text-body-lg font-semibold text-on-surface">
-                  {lang === 'en' ? 'United States' : '美国'}
+                  {lang === 'en' ? currentRegion.name : currentRegion.nameZh}
                 </p>
                 <p className="font-label-caps text-label-caps text-on-surface-variant">
                   {lang === 'en' ? 'Region detected via secure lookup' : '通过安全查询检测地区'}
@@ -207,10 +211,13 @@ export default function KycStatusHubPage() {
                   key={r.code}
                   className="flex items-center gap-2 rounded-lg border border-[#00E676]/20 bg-[#00E676]/5 px-2.5 py-2 transition-all hover:border-[#00E676]/40 hover:bg-[#00E676]/10"
                 >
-                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border border-[#00E676]/30 bg-[#00E676]/10 text-[10px] font-bold text-[#00E676]">
-                    {r.code}
+                  <span
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-[#00E676]/30 bg-[#00E676]/10 text-[18px] leading-none"
+                    aria-label={r.name}
+                  >
+                    {r.flag}
                   </span>
-                  <span className="font-label-caps text-[10px] text-on-surface-variant truncate">
+                  <span className="min-w-0 truncate font-label-caps text-[10px] text-on-surface-variant">
                     {lang === 'en' ? r.name : r.nameZh}
                   </span>
                 </div>
@@ -229,10 +236,13 @@ export default function KycStatusHubPage() {
                   key={r.code}
                   className="flex items-center gap-2 rounded-lg border border-error/20 bg-error/5 px-2.5 py-2 transition-all hover:border-error/40 hover:bg-error/10"
                 >
-                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border border-error/30 bg-error/10 text-[10px] font-bold text-error">
-                    {r.code}
+                  <span
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-error/30 bg-error/10 text-[18px] leading-none"
+                    aria-label={r.name}
+                  >
+                    {r.flag}
                   </span>
-                  <span className="font-label-caps text-[10px] text-on-surface-variant truncate">
+                  <span className="min-w-0 truncate font-label-caps text-[10px] text-on-surface-variant">
                     {lang === 'en' ? r.name : r.nameZh}
                   </span>
                 </div>
@@ -277,8 +287,8 @@ export default function KycStatusHubPage() {
               {lang === 'en' ? 'Global Coverage' : '全球覆盖'}
             </span>
             <div className="mt-3 flex justify-center">
-              <div className="relative w-full" style={{ minHeight: '220px' }}>
-                <svg viewBox="0 0 400 220" className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
+              <div className="relative h-[220px] w-full">
+                <svg viewBox="0 0 400 220" className="h-[220px] w-full" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
                   {/* Background grid lines */}
                   <defs>
                     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -298,6 +308,46 @@ export default function KycStatusHubPage() {
                     </radialGradient>
                   </defs>
                   <rect width="400" height="220" fill="url(#grid)" />
+
+                  {/* Stylized map backdrop for stronger continent visibility */}
+                  <g opacity="0.42">
+                    <path
+                      d="M32 46C43 32 67 27 91 31C112 35 130 50 127 67C124 83 102 89 82 88C58 87 38 79 30 63C27 56 28 51 32 46Z"
+                      fill="#130a20"
+                      stroke="rgba(255,255,255,0.05)"
+                      strokeWidth="1"
+                    />
+                    <path
+                      d="M84 118C95 116 109 121 114 132C118 142 115 154 108 162C100 172 87 178 76 175C68 173 63 165 64 156C65 144 73 124 84 118Z"
+                      fill="#130a20"
+                      stroke="rgba(255,255,255,0.04)"
+                      strokeWidth="1"
+                    />
+                    <path
+                      d="M155 36C163 29 178 28 189 33C198 37 203 47 201 56C198 66 186 73 174 72C162 71 152 63 151 51C150 46 152 40 155 36Z"
+                      fill="#130a20"
+                      stroke="rgba(255,255,255,0.05)"
+                      strokeWidth="1"
+                    />
+                    <path
+                      d="M170 88C181 83 196 86 204 96C211 104 212 117 208 130C203 144 193 154 181 156C168 158 157 150 154 138C151 125 157 95 170 88Z"
+                      fill="#130a20"
+                      stroke="rgba(255,255,255,0.04)"
+                      strokeWidth="1"
+                    />
+                    <path
+                      d="M224 42C239 28 264 27 287 34C307 40 323 54 321 70C319 84 301 92 281 93C262 95 240 92 227 82C217 74 214 52 224 42Z"
+                      fill="#130a20"
+                      stroke="rgba(255,255,255,0.05)"
+                      strokeWidth="1"
+                    />
+                    <path
+                      d="M318 150C326 144 339 144 347 149C355 154 356 165 351 172C345 180 333 184 324 181C316 178 312 168 313 160C313 156 315 152 318 150Z"
+                      fill="#130a20"
+                      stroke="rgba(255,255,255,0.04)"
+                      strokeWidth="1"
+                    />
+                  </g>
 
                   {/* North America */}
                   <circle cx="60" cy="52" r="32" fill="url(#supportedGlow)" />
