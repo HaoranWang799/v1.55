@@ -30,6 +30,11 @@ import PlayerPage        from './pages/PlayerPage'
 import ChatPage          from './pages/ChatPage'
 import HelpCenterPage    from './pages/HelpCenterPage'
 import ReferralPage      from './pages/ReferralPage'
+import KycEntryPage      from './features/kyc/pages/KycEntryPage'
+import KycIdentityPage   from './features/kyc/pages/KycIdentityPage'
+import KycTermsPage      from './features/kyc/pages/KycTermsPage'
+import KycSuccessPage    from './features/kyc/pages/KycSuccessPage'
+import KycRejectedPage   from './features/kyc/pages/KycRejectedPage'
 
 /** 手机宽度约束壳 — 用于 Layout 外的全屏子页面 */
 function PageShell({ children }) {
@@ -79,6 +84,11 @@ export default function App() {
         <Route path="ai-lover/chat"  element={<PageShell><ChatPage /></PageShell>} />
         <Route path="/help"           element={<PageShell><HelpCenterPage /></PageShell>} />
         <Route path="/referral"       element={<PageShell><ReferralPage /></PageShell>} />
+        <Route path="/kyc"            element={<PageShell><KycEntryPage /></PageShell>} />
+        <Route path="/kyc/identity"   element={<PageShell><KycIdentityPage /></PageShell>} />
+        <Route path="/kyc/terms"      element={<PageShell><KycTermsPage /></PageShell>} />
+        <Route path="/kyc/success"    element={<PageShell><KycSuccessPage /></PageShell>} />
+        <Route path="/kyc/rejected"   element={<PageShell><KycRejectedPage /></PageShell>} />
 
         {/* 兜底 */}
         <Route path="*" element={<Navigate to="/home" replace />} />

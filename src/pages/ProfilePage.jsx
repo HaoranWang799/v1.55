@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Modal from '../components/ui/Modal'
 import { useApp } from '../context/AppContext'
+import KycStatusCard from '../features/kyc/components/KycStatusCard'
 import {
   Crown, Settings, Shield, Flame, Headphones, Smartphone,
   CreditCard, ShoppingBag, Sparkles, ChevronRight, LogOut,
@@ -203,6 +204,11 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* KYC 状态卡 */}
+      <div className="px-4 mb-6">
+        <KycStatusCard />
       </div>
 
       {/* 邀请 Banner */}
