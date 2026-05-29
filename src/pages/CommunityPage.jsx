@@ -18,13 +18,14 @@
  * TODO: 接入真实匿名身份系统与内容加密
  * TODO: 实现真实点赞 / 评论 / 收藏后端持久化
  */
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, MessageCircle, Bookmark, Plus, Trash2 } from 'lucide-react'
+import { Bookmark, Heart, MessageCircle, Pause, Play, PlayCircle, Plus, Send, Sparkles, Trash2, Volume2 } from 'lucide-react'
 import { useVirtualLover } from '../hooks/useVirtualLover'
 import useCommunity from '../hooks/useCommunity'
 import { useApp } from '../context/AppContext'
 import { useL } from '../i18n/useL'
+import { preparePresetVoiceAudio } from '../api/scripts'
 
 // 遗留本地数据，当前页面已改为 useCommunity 实时数据流。
 const LEGACY_POSTS_V2 = {
@@ -381,6 +382,193 @@ const COMMUNITY_TEMPLATE_EN = {
   '郁金香庭院·雨后': 'Tulip Courtyard · After Rain',
 }
 
+const EXPERIENCE_IMAGE_FALLBACKS = {
+  1: 'boss',
+  2: 'junior',
+  3: 'rb1',
+  4: 'h3',
+  5: 'neighbor',
+  6: 'boss',
+}
+
+function resolveExperienceImageId(post) {
+  if (post.imageId) return post.imageId
+  if (post.templateId && !String(post.templateId).startsWith('community-')) {
+    return post.templateId
+  }
+  return EXPERIENCE_IMAGE_FALLBACKS[post.id] || 'boss'
+}
+
+const EXPERIENCE_LINES_ZH = {
+  1: '别急，先听我说完这一句。',
+  2: '把节奏交给我，慢慢来。',
+  3: '现在，我们一起同步呼吸。',
+  4: '靠近一点，今晚只看着我。',
+  5: '风停下来的时候，我会更靠近你。',
+  6: '保持这个温度，隐藏台词快来了。',
+}
+
+const EXPERIENCE_LINES_EN = {
+  1: 'Wait, let me finish this line first.',
+  2: 'Follow my rhythm and take it slowly.',
+  3: 'Now breathe with me, together.',
+  4: 'Come closer and keep your eyes on me.',
+  5: 'When the wind settles, I move closer.',
+  6: 'Hold this intensity. The hidden line is close.',
+}
+
+/** charId → 预设语音场景 ID 映射（取每个角色的第一个匹配场景） */
+const CHAR_TO_PRESET_MAP = {
+  'boss': 'hot_01',
+  'junior': 'hot_02',
+  'neighbor': 'hot_03',
+  'teacher': 'fantasy_03',
+  'witch': 'fantasy_02',
+  'hot_01': 'hot_01',
+  'office_03': 'office_03',
+  'campus_01': 'campus_01',
+  'fantasy_02': 'fantasy_02',
+}
+
+const PRESET_EXPERIENCE_CARDS = [
+  {
+    id: 'preset-feed-hot-01',
+    type: 'preset-audio',
+    templateId: 'hot_01',
+    templateName: '办公室·冷感女上司',
+    imageId: 'boss',
+    avatar: '🎧',
+    name: '官方语音精选',
+    time: '刚刚上新',
+    gender: '预设',
+    content: '把这条预设语音放进体验流里，用户不用离开社区就能直接试听。冷感办公室场景很适合做第一张“热门试听卡”。',
+    previewLine: '办公室冷感女上司加班时突然变得温柔',
+    previewLineEn: 'My cold boss suddenly gets tender during overtime',
+    imgColor: 'from-[#351323] via-[#241026] to-[#110910]',
+    imgEmoji: '🎧',
+    likes: 2688,
+    comments: 128,
+    bookmarks: 711,
+    tags: ['#预设语音', '#热门试听', '#官方推荐'],
+    topComments: [
+      { avatar: '🔥', name: '夜听党', text: '这种卡片插在体验流里很自然，不像硬广告。', likes: 66 },
+      { avatar: '🎙️', name: '声控研究所', text: '建议每个分类都放一张试听入口。', likes: 41 },
+    ],
+  },
+  {
+    id: 'preset-feed-office-03',
+    type: 'preset-audio',
+    templateId: 'office_03',
+    templateName: '职场·最后加班',
+    imageId: 'h3',
+    avatar: '💼',
+    name: '加班体验官',
+    time: '23分钟前',
+    gender: '精选',
+    content: '这条适合放在真实用户分享之间：它有明确场景、可直接试听，还能用“试用同款”把用户带回体验链路。',
+    previewLine: '加班到最后一个，总裁关门前说「送你回去吧」',
+    previewLineEn: 'Last one working late—the CEO says "Let me take you home"',
+    imgColor: 'from-[#2b1622] via-[#1d111a] to-[#10090e]',
+    imgEmoji: '💼',
+    likes: 1496,
+    comments: 82,
+    bookmarks: 356,
+    tags: ['#办公室', '#沉浸试听', '#可试用'],
+    topComments: [
+      { avatar: '🦊', name: '夜行狐', text: '作为中插内容刚好，滑到就能听。', likes: 29 },
+      { avatar: '📌', name: '产品笔记', text: '内容流和语音资产终于连上了。', likes: 24 },
+    ],
+  },
+  {
+    id: 'preset-feed-fantasy-02',
+    type: 'preset-audio',
+    templateId: 'fantasy_02',
+    templateName: '禁忌·女神赌局',
+    imageId: 'witch',
+    avatar: '✨',
+    name: '幻想收藏夹',
+    time: '1小时前',
+    gender: '预设',
+    content: '幻想类语音包可以更像“用户种草”：先给一句氛围描述，再让播放器承担真正的体验预览。',
+    previewLine: '女神说只要赢了两局就可以直接带我回家',
+    previewLineEn: 'The goddess says two wins can take me straight home',
+    imgColor: 'from-[#24103a] via-[#1a0d2a] to-[#0b0712]',
+    imgEmoji: '✨',
+    likes: 3201,
+    comments: 174,
+    bookmarks: 902,
+    tags: ['#幻想场景', '#语音包', '#收藏向'],
+    topComments: [
+      { avatar: '🦋', name: '蝴蝶效应', text: '这个更适合做晚间推荐位。', likes: 57 },
+      { avatar: '🎨', name: '创作家Mia', text: '还可以开放二创同款脚本。', likes: 36 },
+    ],
+  },
+]
+
+function buildExperienceFeed(posts) {
+  if (!Array.isArray(posts) || posts.length === 0) return PRESET_EXPERIENCE_CARDS
+
+  const feed = []
+  posts.forEach((post, index) => {
+    feed.push(post)
+    if (index === 0) feed.push(PRESET_EXPERIENCE_CARDS[0])
+    if (index === 2) feed.push(PRESET_EXPERIENCE_CARDS[1])
+  })
+  feed.push(PRESET_EXPERIENCE_CARDS[2])
+  return feed
+}
+
+/**
+ * 使用预设语音音频 — 为体验分享帖加载真实 TTS 音频
+ * @param {string|null} templateId 帖子的 templateId / charId
+ * @returns {{ audioUrl: string|null, loading: boolean, error: string|null, openingLine: string, characterName: string }}
+ */
+function useExperienceAudio(templateId) {
+  const presetId = templateId ? CHAR_TO_PRESET_MAP[templateId] : null
+  const [audioUrl, setAudioUrl] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [openingLine, setOpeningLine] = useState('')
+  const [characterName, setCharacterName] = useState('')
+  const mountedRef = useRef(true)
+  const fetchedRef = useRef(false)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
+  useEffect(() => {
+    if (!presetId || fetchedRef.current) return
+    fetchedRef.current = true
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const result = await preparePresetVoiceAudio(presetId)
+        if (cancelled || !mountedRef.current) return
+        if (result?.script?.audioUrl) {
+          setAudioUrl(result.script.audioUrl)
+          setOpeningLine(result.script.openingLine || '')
+          setCharacterName(result.script.name || '')
+        }
+      } catch (err) {
+        if (cancelled || !mountedRef.current) return
+        console.warn(`预设音频加载失败 [${presetId}]:`, err.message)
+        setError(err.message)
+      } finally {
+        if (!cancelled && mountedRef.current) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [presetId])
+
+  return { audioUrl, loading, error, openingLine, characterName, hasPreset: Boolean(presetId) }
+}
+
 // ═══════════════════════════════════════════════════════════
 //  子组件
 // ═══════════════════════════════════════════════════════════
@@ -555,6 +743,370 @@ function PostCard({ post, likeState, onLike }) {
         </div>
       )}
     </div>
+  )
+}
+
+function ReelAction({ icon: Icon, label, active = false, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 text-white/80 transition-all active:scale-90"
+    >
+      <span className={`flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md ${
+        active
+          ? 'border-[#FF9ACB]/55 bg-[#FF4FA3]/35 text-[#FFB8D7] shadow-[0_0_18px_rgba(255,79,163,0.35)]'
+          : 'border-white/15 bg-black/35 text-white hover:bg-white/15'
+      }`}>
+        <Icon size={21} fill={active ? 'currentColor' : 'none'} strokeWidth={2.1} />
+      </span>
+      <span className="max-w-[54px] truncate text-[10px] font-medium text-white/70">{label}</span>
+    </button>
+  )
+}
+
+function formatAudioTime(seconds) {
+  if (!seconds || !isFinite(seconds)) return '0:00'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave }) {
+  const L = useL()
+  const { liked, count } = likeState
+  const [saved, setSaved] = useState(false)
+  const isPresetAudioCard = post.type === 'preset-audio'
+  const imageId = resolveExperienceImageId(post)
+  const [imgSrc, setImgSrc] = useState(`/images/posts/${imageId}.jpg`)
+  const en = LEGACY_POSTS_EN[post.id]
+  const tags = Array.isArray(post.tags) ? post.tags : []
+  const displayTags = en?.tags ? tags.map((t, i) => L(t, en.tags[i] || t)) : tags
+  const imgColor = post.imgColor || 'from-[#1a1028] to-[#251840]'
+  const imgEmoji = post.imgEmoji || post.avatar || '✨'
+  const displayName = L(post.name, COMMUNITY_NAME_EN[post.name] || post.name)
+  const displayTemplateName = L(post.templateName, COMMUNITY_TEMPLATE_EN[post.templateName] || post.templateName)
+  const content = L(post.content, en?.content || post.content)
+  const comments = Number(post.comments || 0)
+
+  // ── 预设语音音频 ──────────────────────────────────────────
+  const { audioUrl, loading: audioLoading, error: audioError, openingLine, hasPreset } = useExperienceAudio(post.templateId)
+
+  // ── 音频播放状态 ──────────────────────────────────────────
+  const audioRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioCurrent, setAudioCurrent] = useState(0)
+  const [audioDuration, setAudioDuration] = useState(0)
+  const [audioLoaded, setAudioLoaded] = useState(false)
+  const progressBarRef = useRef(null)
+
+  // 切换 posts 时重置
+  useEffect(() => {
+    setIsPlaying(false)
+    setAudioCurrent(0)
+    setAudioDuration(0)
+    setAudioLoaded(false)
+  }, [post.id])
+
+  const handlePlayPause = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio || !audioLoaded) return
+    if (audio.paused) {
+      audio.play().catch(() => {})
+    } else {
+      audio.pause()
+    }
+  }, [audioLoaded])
+
+  const handleSeek = useCallback((event) => {
+    const audio = audioRef.current
+    const bar = progressBarRef.current
+    if (!audio || !audioLoaded || !bar) return
+    const rect = bar.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+    audio.currentTime = ratio * audio.duration
+  }, [audioLoaded])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const onTimeUpdate = () => setAudioCurrent(audio.currentTime)
+    const onDuration = () => { if (audio.duration && isFinite(audio.duration)) { setAudioDuration(audio.duration); setAudioLoaded(true) } }
+    const onEnded = () => setIsPlaying(false)
+    const onPlay = () => setIsPlaying(true)
+    const onPause = () => setIsPlaying(false)
+    const onLoaded = () => { if (audio.duration && isFinite(audio.duration)) { setAudioDuration(audio.duration); setAudioLoaded(true) } }
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('durationchange', onDuration)
+    audio.addEventListener('ended', onEnded)
+    audio.addEventListener('play', onPlay)
+    audio.addEventListener('pause', onPause)
+    audio.addEventListener('loadedmetadata', onLoaded)
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('durationchange', onDuration)
+      audio.removeEventListener('ended', onEnded)
+      audio.removeEventListener('play', onPlay)
+      audio.removeEventListener('pause', onPause)
+      audio.removeEventListener('loadedmetadata', onLoaded)
+    }
+  }, [audioUrl])
+
+  // ── 播放器文案 ────────────────────────────────────────────
+  const progress = audioDuration > 0 ? (audioCurrent / audioDuration) * 100 : 0
+  const fallbackLine = L(
+    post.previewLine || EXPERIENCE_LINES_ZH[post.id] || EXPERIENCE_LINES_ZH[1],
+    post.previewLineEn || EXPERIENCE_LINES_EN[post.id] || EXPERIENCE_LINES_EN[1]
+  )
+  const displayLine = hasPreset
+    ? (audioLoading ? L('语音准备中…', 'Preparing voice…') : audioError ? fallbackLine : (openingLine || fallbackLine))
+    : fallbackLine
+  const showRealPlayer = hasPreset && audioUrl && !audioError
+  const showFakePlayer = !hasPreset || audioError
+  const currentTimeStr = showRealPlayer ? formatAudioTime(audioCurrent) : `0:${String(8 + ((Number(post.id) || 1) * 7) % 48).padStart(2, '0')}`
+  const totalTimeStr = showRealPlayer ? formatAudioTime(audioDuration) : `1:${String(18 + ((Number(post.id) || 1) * 5) % 38).padStart(2, '0')}`
+
+  return (
+    <article className={`relative h-full overflow-hidden rounded-[28px] bg-gradient-to-br ${imgColor} shadow-[0_24px_80px_rgba(0,0,0,0.45)]`}>
+      {/* 隐藏的真实 audio 元素 */}
+      {showRealPlayer && (
+        <audio ref={audioRef} src={audioUrl} preload="auto" />
+      )}
+
+      {imgSrc && (
+        <img
+          src={imgSrc}
+          alt=""
+          onError={() => {
+            if (imgSrc.endsWith('.jpg')) setImgSrc(`/images/posts/${imageId}.png`)
+            else setImgSrc(null)
+          }}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+      {!imgSrc && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="select-none text-7xl opacity-35">{imgEmoji}</span>
+        </div>
+      )}
+
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.1)_35%,rgba(0,0,0,0.82)_100%)]" />
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/45 to-transparent" />
+
+      <div className="absolute bottom-5 left-4 right-[82px] space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-xl backdrop-blur-md">
+            {post.avatar}
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-sm font-bold text-white">{displayName}</p>
+              <GenderBadge gender={post.gender} />
+            </div>
+            <p className="text-[10px] text-white/55">{L(post.time, en?.time || post.time)}</p>
+          </div>
+          {isPresetAudioCard && (
+            <span className="ml-auto rounded-full border border-[#FFB8D7]/25 bg-[#FF4FA3]/18 px-2 py-1 text-[9px] font-semibold text-[#FFD5E7] shadow-[0_0_14px_rgba(255,79,163,0.18)]">
+              {L('预设语音包', 'Preset Pack')}
+            </span>
+          )}
+        </div>
+
+        <p className="line-clamp-3 text-[13px] leading-relaxed text-white/88 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+          {content}
+        </p>
+
+        <div className="flex flex-wrap gap-1.5">
+          {displayTags.slice(0, 3).map((tag) => (
+            <span key={tag} className="rounded-full bg-white/12 px-2 py-1 text-[10px] font-medium text-white/78 backdrop-blur-md">
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        {/* ── 音频播放器 ──────────────────────────────────── */}
+        <div className={`space-y-2 rounded-2xl border backdrop-blur-md p-3 transition-all ${
+          audioLoading ? 'border-[#B380FF]/25 bg-[#B380FF]/8 animate-pulse' :
+          audioError ? 'border-[rgba(255,100,100,0.2)] bg-[rgba(255,100,100,0.06)]' :
+          showRealPlayer ? 'border-[#FF9ACB]/20 bg-black/28' :
+          'border-white/12 bg-black/28'
+        }`}>
+          <div className="flex items-center gap-2">
+            {/* 播放/暂停按钮 */}
+            {showRealPlayer ? (
+              <button
+                onClick={handlePlayPause}
+                disabled={!audioLoaded}
+                className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#FF4FA3]/25 text-[#FFB8D7] transition-all active:scale-90 disabled:opacity-40"
+              >
+                {isPlaying ? <Pause size={13} /> : <Play size={13} className="ml-0.5" />}
+              </button>
+            ) : (
+              <PlayCircle size={15} className={`flex-shrink-0 ${audioLoading ? 'text-[#B380FF] animate-pulse' : 'text-[#FFB8D7]'}`} />
+            )}
+            <p className={`min-w-0 flex-1 truncate text-[12px] font-semibold ${
+              audioLoading ? 'text-[#B380FF]' : audioError ? 'text-[rgba(255,150,150,0.7)]' : 'text-white'
+            }`}>
+              {displayLine}
+            </p>
+            {/* 音频加载指示器 */}
+            {audioLoading && (
+              <span className="flex-shrink-0 h-3 w-3 rounded-full border-2 border-[#B380FF] border-t-transparent animate-spin" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="w-8 text-[9px] tabular-nums text-white/55">{currentTimeStr}</span>
+            {/* 进度条 */}
+            {showRealPlayer ? (
+              <div
+                ref={progressBarRef}
+                className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/18 cursor-pointer"
+                onClick={handleSeek}
+              >
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#FF7DAF] to-[#B380FF] shadow-[0_0_10px_rgba(255,125,175,0.55)] transition-[width] duration-150"
+                  style={{ width: `${progress}%` }}
+                />
+                <span
+                  className="absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.75)]"
+                  style={{ left: `calc(${progress}% - 5px)` }}
+                />
+              </div>
+            ) : (
+              <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/18">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#FF7DAF] to-[#B380FF] shadow-[0_0_10px_rgba(255,125,175,0.55)]"
+                  style={{ width: `${18 + ((Number(post.id) || 1) * 13) % 64}%` }}
+                />
+                <span
+                  className="absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.75)]"
+                  style={{ left: `calc(${18 + ((Number(post.id) || 1) * 13) % 64}% - 5px)` }}
+                />
+              </div>
+            )}
+            <span className="w-8 text-right text-[9px] tabular-nums text-white/55">{totalTimeStr}</span>
+          </div>
+
+          {/* 语音标签 */}
+          {showRealPlayer && (
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#00E676] shadow-[0_0_6px_rgba(0,230,118,0.55)]" />
+              <span className="text-[9px] text-[rgba(0,230,118,0.7)]">
+                {isPresetAudioCard ? L('内容流试听卡', 'Feed Audio Card') : L('AI 预设语音', 'AI Preset Voice')}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {post.templateName && (
+          <button
+            type="button"
+            onClick={onTryTemplate}
+            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#FF9ACB]/35 bg-[#FF4FA3]/18 px-3 py-2 text-[11px] font-semibold text-[#FFD5E7] backdrop-blur-md transition-all hover:bg-[#FF4FA3]/28 active:scale-[0.98]"
+          >
+            <Sparkles size={13} />
+            <span className="truncate">{L('试用同款：', 'Try: ')}{displayTemplateName}</span>
+          </button>
+        )}
+      </div>
+
+      <div className="absolute bottom-7 right-4 flex flex-col items-center gap-3">
+        <ReelAction icon={Heart} label={count.toLocaleString()} active={liked} onClick={onLike} />
+        <ReelAction icon={MessageCircle} label={comments.toString()} onClick={onComment} />
+        <ReelAction
+          icon={Bookmark}
+          label={saved ? L('已收藏', 'Saved') : L('收藏', 'Save')}
+          active={saved}
+          onClick={() => {
+            setSaved((v) => !v)
+            onSave()
+          }}
+        />
+        <ReelAction icon={Send} label={L('分享', 'Share')} onClick={() => alert(L('分享功能即将开放', 'Share coming soon'))} />
+        <ReelAction icon={Volume2} label={L('试听', 'Audio')} onClick={onTryTemplate} />
+      </div>
+    </article>
+  )
+}
+
+function ExperienceReel({ posts, loading, likesMap, onLike, onTryTemplate, onComment, onSave }) {
+  const L = useL()
+  const [activeIndex, setActiveIndex] = useState(0)
+  const touchStartY = useRef(null)
+  const wheelLocked = useRef(false)
+  const feedPosts = buildExperienceFeed(posts)
+
+  useEffect(() => {
+    setActiveIndex(0)
+  }, [posts])
+
+  const move = (direction) => {
+    setActiveIndex((idx) => {
+      const next = idx + direction
+      if (next < 0) return 0
+      if (next >= feedPosts.length) return feedPosts.length - 1
+      return next
+    })
+  }
+
+  const handleWheel = (event) => {
+    if (Math.abs(event.deltaY) < 18 || wheelLocked.current) return
+    wheelLocked.current = true
+    move(event.deltaY > 0 ? 1 : -1)
+    window.setTimeout(() => {
+      wheelLocked.current = false
+    }, 520)
+  }
+
+  if (loading && posts.length === 0) {
+    return (
+      <div className="flex h-[calc(100dvh-10rem)] min-h-[560px] items-center justify-center rounded-[28px] bg-black/30">
+        <p className="text-[12px] text-white/45 animate-pulse">{L('加载体验流中…', 'Loading experience feed…')}</p>
+      </div>
+    )
+  }
+
+  if (!feedPosts.length) return null
+
+  const activePost = feedPosts[activeIndex] || feedPosts[0]
+  const isPresetCard = activePost.type === 'preset-audio'
+
+  return (
+    <section
+      className="-mx-4 mt-1 min-h-0 flex-1 px-3"
+      onWheel={handleWheel}
+      onTouchStart={(event) => {
+        touchStartY.current = event.touches[0]?.clientY ?? null
+      }}
+      onTouchEnd={(event) => {
+        if (touchStartY.current == null) return
+        const endY = event.changedTouches[0]?.clientY ?? touchStartY.current
+        const delta = touchStartY.current - endY
+        touchStartY.current = null
+        if (Math.abs(delta) > 44) move(delta > 0 ? 1 : -1)
+      }}
+    >
+      <div className="relative h-full min-h-[360px] overflow-hidden">
+        <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1.5 text-[10px] font-medium text-white/70 backdrop-blur-md">
+          <span className={`h-1.5 w-1.5 rounded-full ${isPresetCard ? 'bg-[#FF9ACB]' : 'bg-[#B380FF]'} shadow-[0_0_8px_currentColor]`} />
+          {isPresetCard ? L('预设语音包混排', 'Preset mixed in') : L('真实体验分享', 'Experience post')}
+          <span className="text-white/35">{activeIndex + 1}/{feedPosts.length}</span>
+        </div>
+        <div className="h-full transition-all duration-300 ease-out" key={activePost.id}>
+          <ReelSlide
+            post={activePost}
+            likeState={likesMap[activePost.id] || { liked: false, count: activePost.likes || 0 }}
+            onLike={() => onLike(activePost.id)}
+            onTryTemplate={() => onTryTemplate(activePost)}
+            onComment={() => onComment(activePost)}
+            onSave={() => onSave(activePost)}
+          />
+        </div>
+
+      </div>
+    </section>
   )
 }
 
@@ -844,11 +1396,39 @@ export default function CommunityPage() {
     })
   }
 
+  const handleTryTemplate = (post) => {
+    const displayTemplateName = L(post.templateName, COMMUNITY_TEMPLATE_EN[post.templateName] || post.templateName || '')
+    showToast(L('正在打开同款体验：', 'Opening experience: ') + displayTemplateName)
+    navigate('/player', {
+      state: {
+        templateId: post.templateId,
+        templateName: post.templateName,
+        source: 'community-experience-reel',
+      },
+    })
+  }
+
+  const handleComment = () => {
+    showToast(L('评论功能即将开放', 'Comments coming soon'))
+  }
+
+  const handleSave = () => {
+    showToast(L('已更新收藏状态', 'Saved state updated'))
+  }
+
+  const isExperienceTab = currentTab === '体验分享'
+
   return (
-    <div className="relative px-4 pt-4 pb-24 space-y-4 page-enter">
+    <div
+      className={
+        isExperienceTab
+          ? 'relative flex h-[calc(100dvh-7.5rem)] flex-col gap-4 overflow-hidden px-4 pb-2 pt-4 page-enter'
+          : 'relative space-y-4 px-4 pb-24 pt-4 page-enter'
+      }
+    >
 
       {/* ═══ 顶部 Tab ════════════════════════════════════════ */}
-      <div className="relative flex bg-[rgba(255,255,255,0.04)] rounded-2xl p-1 page-section page-delay-1">
+      <div className="sticky top-0 z-20 flex flex-shrink-0 rounded-2xl border border-white/5 bg-[rgba(20,14,18,0.82)] p-1 shadow-[0_12px_28px_rgba(0,0,0,0.22)] backdrop-blur-md page-section page-delay-1">
         {/* 滑动高亮块 */}
         <div
           className="absolute top-1 bottom-1 rounded-xl bg-[rgba(255,154,203,0.15)] transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
@@ -875,7 +1455,7 @@ export default function CommunityPage() {
       </div>
 
       {/* ═══ AI 主动关怀卡片（接入 Grok AI）═══════════════════ */}
-      <div className="page-section page-delay-2">
+      <div className="flex-shrink-0 page-section page-delay-2">
         <AiLoverCard
           aiMemoryDeleted={aiMemoryDeleted}
           onResetMemory={() => setAiMemoryDeleted(false)}
@@ -894,7 +1474,7 @@ export default function CommunityPage() {
       </div>
 
       {/* ═══ 加载状态 ════════════════════════════════════════ */}
-      {loading && posts.length === 0 && (
+      {loading && posts.length === 0 && !isExperienceTab && (
         <div className="flex justify-center items-center py-12 page-section page-delay-3">
           <div className="text-center">
             <p className="text-[12px] text-[rgba(245,240,242,0.4)] animate-pulse">{L('加载社区帖子中…', 'Loading community posts…')}</p>
@@ -916,7 +1496,19 @@ export default function CommunityPage() {
       )}
 
       {/* ═══ 帖子列表 ════════════════════════════════════════ */}
-      {posts.length > 0 && (
+      {posts.length > 0 && isExperienceTab && (
+        <ExperienceReel
+          posts={posts}
+          loading={loading}
+          likesMap={likesMap}
+          onLike={toggleLike}
+          onTryTemplate={handleTryTemplate}
+          onComment={handleComment}
+          onSave={handleSave}
+        />
+      )}
+
+      {posts.length > 0 && !isExperienceTab && (
         <div className={`space-y-3 transition-opacity duration-150 page-section page-delay-3 ${loading ? 'opacity-72' : 'opacity-100'}`}>
           {posts.map((post) => (
             <PostCard
@@ -937,11 +1529,13 @@ export default function CommunityPage() {
       )}
 
       {/* ═══ 隐私提示 ════════════════════════════════════════ */}
+      {!isExperienceTab && (
       <div className="pt-2 pb-4 text-center page-section page-delay-4">
         <p className="text-[10px] text-[rgba(245,240,242,0.25)] leading-relaxed">
           {L('所有内容匿名发布，本地加密。可随时清除记忆。', 'All content posted anonymously with local encryption. Memory can be cleared anytime.')}
         </p>
       </div>
+      )}
 
       {/* ═══ 悬浮"发布新帖"按钮 ══════════════════════════════ */}
       {/*
@@ -950,6 +1544,7 @@ export default function CommunityPage() {
        * 在窄屏上：right = max(16px, 上面公式结果)
        * TODO: 实现真实发帖功能（文本/图片上传 + 匿名加密）
        */}
+      {!isExperienceTab && (
       <button
         onClick={() => alert(L('✍️ 创作功能即将开放！\n期待你的精彩内容~', '✍️ Creation feature coming soon!\nStay tuned for your amazing content~'))}
         className="
@@ -967,6 +1562,7 @@ export default function CommunityPage() {
       >
         <Plus size={22} />
       </button>
+      )}
     </div>
   )
 }
