@@ -42,6 +42,10 @@ body {
   color: var(--text-primary);
 }
 
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 /* ── 全局滚动条隐藏 ───────────────────────────────────────── */
 html, body, #root {
   scrollbar-width: none;

@@ -9,17 +9,21 @@ export default function DocumentUploadBox({ label, uploaded, onUpload }: Props) 
     <button
       type="button"
       onClick={onUpload}
-      className={`group aspect-[4/3] rounded-xl border-2 border-dashed p-3 transition-all ${
+      className={`group aspect-[4/3] rounded-xl border-2 border-dashed p-3 transition-colors ${
         uploaded
-          ? 'border-[#ff479b]/60 bg-[#ff479b]/10'
-          : 'border-[#5a3f48] bg-black/35 hover:border-[#ff479b]/70 hover:bg-[#ff479b]/8'
+          ? 'border-primary bg-primary/10'
+          : 'border-outline-variant bg-black/50 hover:border-primary hover:bg-primary/5'
       }`}
     >
       <div className="flex h-full flex-col items-center justify-center gap-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2a2a2a]">
-          <span className="material-symbols-outlined text-[#ffb0ca]">{uploaded ? 'check_circle' : 'add_photo_alternate'}</span>
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-high transition-colors group-hover:bg-primary/20">
+          <span className="material-symbols-outlined text-on-surface-variant transition-colors group-hover:text-primary">
+            {uploaded ? 'check_circle' : 'add_photo_alternate'}
+          </span>
         </div>
-        <span className="text-xs text-[#e2bdc7]">{uploaded ? `${label} Uploaded` : label}</span>
+        <span className="font-body-sm text-body-sm text-on-surface-variant transition-colors group-hover:text-primary">
+          {uploaded ? `${label} Uploaded` : label}
+        </span>
       </div>
     </button>
   )

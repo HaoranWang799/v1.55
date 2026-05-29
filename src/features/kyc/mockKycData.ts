@@ -7,37 +7,37 @@ export const KYC_TERMS: KycTerm[] = [
   {
     id: 'term-age',
     title: '18+ Age Confirmation',
-    desc: 'I verify that I am at least 18 years of age.',
+    desc: 'I verify that I am at least 18 years of age and legally permitted to access adult content.',
     icon: '18_up_rating',
   },
   {
     id: 'term-virtual',
     title: 'Virtual Character Interactions',
-    desc: 'I understand entities are virtual AI characters.',
+    desc: 'I understand all entities are virtual AI constructions and not real persons.',
     icon: 'smart_toy',
   },
   {
     id: 'term-adult',
     title: 'Adult Content Acknowledgment',
-    desc: 'I consent to mature and explicit themed content.',
+    desc: 'I consent to being exposed to explicit and mature thematic elements.',
     icon: 'warning',
   },
   {
     id: 'term-minor',
     title: 'No Minor Access Guarantee',
-    desc: 'I will prevent anyone under 18 from accessing this app.',
+    desc: 'I will secure my device to prevent access by anyone under 18.',
     icon: 'no_accounts',
   },
   {
     id: 'term-privacy',
     title: 'Privacy & Data Handling',
-    desc: 'I agree with secure handling of verification data.',
+    desc: 'I agree to the secure encryption and handling of my verification biometric data.',
     icon: 'policy',
   },
   {
     id: 'term-hardware',
     title: 'Hardware Safety Protocols',
-    desc: 'I accept safe usage responsibility for connected devices.',
+    desc: 'I accept responsibility for safe usage of connected haptic and sensory peripherals.',
     icon: 'router',
   },
 ]

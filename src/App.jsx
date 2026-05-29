@@ -47,6 +47,16 @@ function PageShell({ children }) {
   )
 }
 
+function KycShell({ children }) {
+  return (
+    <div className="min-h-screen bg-[#050305] flex justify-center">
+      <div className="relative w-full max-w-[480px] min-h-screen overflow-hidden">
+        {children}
+      </div>
+    </div>
+  )
+}
+
 /** 全局 Toast 挂载在 AppProvider 内 */
 function GlobalToast() {
   const { toastMessage, clearToast } = useApp()
@@ -84,11 +94,11 @@ export default function App() {
         <Route path="ai-lover/chat"  element={<PageShell><ChatPage /></PageShell>} />
         <Route path="/help"           element={<PageShell><HelpCenterPage /></PageShell>} />
         <Route path="/referral"       element={<PageShell><ReferralPage /></PageShell>} />
-        <Route path="/kyc"            element={<PageShell><KycEntryPage /></PageShell>} />
-        <Route path="/kyc/identity"   element={<PageShell><KycIdentityPage /></PageShell>} />
-        <Route path="/kyc/terms"      element={<PageShell><KycTermsPage /></PageShell>} />
-        <Route path="/kyc/success"    element={<PageShell><KycSuccessPage /></PageShell>} />
-        <Route path="/kyc/rejected"   element={<PageShell><KycRejectedPage /></PageShell>} />
+        <Route path="/kyc"            element={<KycShell><KycEntryPage /></KycShell>} />
+        <Route path="/kyc/identity"   element={<KycShell><KycIdentityPage /></KycShell>} />
+        <Route path="/kyc/terms"      element={<KycShell><KycTermsPage /></KycShell>} />
+        <Route path="/kyc/success"    element={<KycShell><KycSuccessPage /></KycShell>} />
+        <Route path="/kyc/rejected"   element={<KycShell><KycRejectedPage /></KycShell>} />
 
         {/* 兜底 */}
         <Route path="*" element={<Navigate to="/home" replace />} />

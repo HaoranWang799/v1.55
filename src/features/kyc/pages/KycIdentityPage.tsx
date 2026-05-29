@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DocumentUploadBox from '../components/DocumentUploadBox'
-import KycProgress from '../components/KycProgress'
+import { KycTopBar } from '../components/KycProgress'
 import { getKycIdentityDraft, setKycIdentityDraft, uploadKycDocument } from '../mockKycData'
 import type { DocumentType, KycIdentityDraft } from '../types'
 
-const docOptions: { id: DocumentType; label: string; icon: string }[] = [
-  { id: 'id_card', label: 'ID Card', icon: 'badge' },
-  { id: 'passport', label: 'Passport', icon: 'menu_book' },
-  { id: 'driver_license', label: 'Driver License', icon: 'directions_car' },
+const documentOptions: { id: DocumentType; label: string; icon: string }[] = [
+  { id: 'id_card', label: 'ID CARD', icon: 'badge' },
+  { id: 'passport', label: 'PASSPORT', icon: 'menu_book' },
+  { id: 'driver_license', label: 'DRIVER\nLICENSE', icon: 'directions_car' },
 ]
 
 export default function KycIdentityPage() {
@@ -21,53 +21,71 @@ export default function KycIdentityPage() {
     return draft.frontUploaded && draft.backUploaded
   }, [draft])
 
+  function updateDraft(next: KycIdentityDraft) {
+    setDraft(next)
+    setKycIdentityDraft(next)
+  }
+
+  function chooseDocument(documentType: DocumentType) {
+    updateDraft({ ...draft, documentType })
+  }
+
   async function markUploaded(side: 'front' | 'back' | 'passport' | 'selfie') {
     await uploadKycDocument({ documentType: draft.documentType, side })
-    const next = {
+    updateDraft({
       ...draft,
       frontUploaded: side === 'front' ? true : draft.frontUploaded,
       backUploaded: side === 'back' ? true : draft.backUploaded,
       passportUploaded: side === 'passport' ? true : draft.passportUploaded,
       selfieCompleted: side === 'selfie' ? true : draft.selfieCompleted,
-    }
-    setDraft(next)
-    setKycIdentityDraft(next)
-  }
-
-  function chooseDocument(type: DocumentType) {
-    const next = { ...draft, documentType: type }
-    setDraft(next)
-    setKycIdentityDraft(next)
+    })
   }
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e2e2e2]">
-      <main className="mx-auto w-full max-w-[480px] pb-28">
-        <KycProgress currentStep={2} />
-        <div className="space-y-5 px-5 pt-5">
-          <section>
-            <h1 className="text-2xl font-bold">Verify Your Identity</h1>
-            <p className="mt-1 text-sm text-[#a98892]">Upload a valid document and complete selfie check.</p>
-          </section>
+    <main className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-[#0D0118] pb-[100px] font-sans text-on-surface">
+      <div className="pointer-events-none fixed left-1/2 top-0 z-0 h-[300px] w-full max-w-[480px] -translate-x-1/2 bg-primary-container/10 blur-[100px]" />
+      <KycTopBar onBack={() => navigate('/kyc')} />
 
-          <section className="flex gap-3 overflow-x-auto pb-1">
-            {docOptions.map((opt) => {
-              const active = draft.documentType === opt.id
+      <div className="z-10 flex flex-1 flex-col gap-stack-lg px-container-margin pt-stack-md">
+        <section className="flex flex-col gap-stack-sm">
+          <h2 className="font-display-lg text-display-lg text-on-surface">Verify Your Identity</h2>
+          <p className="font-body-sm text-on-surface-variant">Upload a valid document and complete a quick selfie check.</p>
+          <p className="font-chinese-sub text-on-surface-variant/70">请上传有效证件，并完成本人验证。</p>
+        </section>
+
+        <section className="flex flex-col gap-stack-md">
+          <div className="-mx-container-margin flex snap-x items-center gap-gutter overflow-x-auto px-container-margin pb-2 scrollbar-hide">
+            {documentOptions.map((option) => {
+              const active = draft.documentType === option.id
               return (
                 <button
-                  key={opt.id}
+                  key={option.id}
                   type="button"
-                  onClick={() => chooseDocument(opt.id)}
-                  className={`min-w-[130px] rounded-xl border p-3 text-left transition-all ${active ? 'border-[#ff479b] bg-[#220f1a] shadow-[0_0_20px_rgba(255,71,155,0.25)]' : 'border-[#5a3f48]/45 bg-[#1f1f1f] hover:border-[#a98892]/55'}`}
+                  onClick={() => chooseDocument(option.id)}
+                  className={`relative flex h-[100px] w-[120px] flex-shrink-0 snap-start flex-col items-center justify-center gap-stack-sm overflow-hidden rounded-xl border transition-all duration-300 ${
+                    active
+                      ? 'border-primary bg-gradient-to-b from-[#1a0826] to-black shadow-[0_0_15px_rgba(255,71,155,0.4)]'
+                      : 'border-white/10 bg-surface-container text-on-surface-variant hover:border-white/30 hover:text-on-surface'
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-[#ffb0ca]">{opt.icon}</span>
-                  <p className="mt-2 text-xs font-semibold">{opt.label}</p>
+                  <div className="absolute inset-0 bg-primary/10 opacity-0 transition-opacity group-hover:opacity-100" />
+                  <span
+                    className={`material-symbols-outlined text-[32px] ${active ? 'text-primary drop-shadow-[0_0_8px_rgba(255,176,202,0.8)]' : ''}`}
+                    style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+                  >
+                    {option.icon}
+                  </span>
+                  <span className={`whitespace-pre-line px-2 text-center font-label-caps text-label-caps ${active ? 'text-primary' : ''}`}>
+                    {option.label}
+                  </span>
                 </button>
               )
             })}
-          </section>
+          </div>
+        </section>
 
-          <section className="grid grid-cols-2 gap-3">
+        <section className="flex flex-col gap-stack-md">
+          <div className="grid grid-cols-2 gap-gutter">
             {draft.documentType === 'passport' ? (
               <div className="col-span-2">
                 <DocumentUploadBox label="Passport Photo Page" uploaded={draft.passportUploaded} onUpload={() => markUploaded('passport')} />
@@ -78,38 +96,58 @@ export default function KycIdentityPage() {
                 <DocumentUploadBox label="Back Side" uploaded={draft.backUploaded} onUpload={() => markUploaded('back')} />
               </>
             )}
-          </section>
+          </div>
+          <div className="flex items-start gap-stack-sm rounded-lg border border-secondary/20 bg-secondary-container/10 p-stack-sm backdrop-blur-sm">
+            <span className="material-symbols-outlined mt-0.5 text-[20px] text-secondary">lightbulb</span>
+            <p className="font-chinese-sub text-chinese-sub leading-tight text-secondary/90">
+              Ensure all details are clearly legible. Avoid glare, reflections, and dark shadows. Place the document on a dark, flat surface.
+            </p>
+          </div>
+        </section>
 
-          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1b1b1b] to-black p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Selfie Check</h3>
-              <span className={`text-xs ${draft.selfieCompleted ? 'text-[#ffb0ca]' : 'text-[#a98892]'}`}>{draft.selfieCompleted ? 'Completed' : 'Pending'}</span>
-            </div>
-            <div className="relative mx-auto flex h-[210px] w-[150px] items-center justify-center overflow-hidden rounded-[70px] border-2 border-[#ff479b]/45 bg-black/45">
-              <span className="material-symbols-outlined text-[84px] text-white/15">person</span>
-              {draft.selfieCompleted ? null : <div className="absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 bg-[#ff479b] shadow-[0_0_14px_rgba(255,71,155,0.8)]" />}
-            </div>
-            <button
-              type="button"
-              onClick={() => markUploaded('selfie')}
-              className="mt-4 w-full rounded-full border border-[#ff479b]/45 bg-[#ff479b]/10 px-4 py-2.5 text-xs font-semibold text-[#ffb0ca] transition-all hover:bg-[#ff479b]/20 active:scale-[0.99]"
-            >
-              {draft.selfieCompleted ? 'Selfie Completed' : 'Complete Selfie'}
-            </button>
-          </section>
-        </div>
-
-        <div className="fixed bottom-0 left-1/2 w-full max-w-[480px] -translate-x-1/2 bg-gradient-to-t from-[#131313] via-[#131313]/95 to-transparent p-5">
+        <section className="flex flex-col gap-stack-md">
+          <h3 className="font-headline-md text-body-lg text-on-surface">Selfie Check</h3>
           <button
             type="button"
-            disabled={!canContinue}
-            onClick={() => navigate('/kyc/terms')}
-            className={`w-full rounded-full px-4 py-3 text-sm font-semibold transition-all ${canContinue ? 'bg-gradient-to-r from-[#ff479b] to-[#6e208c] text-white shadow-[0_6px_24px_rgba(255,71,155,0.35)] hover:opacity-95' : 'cursor-not-allowed bg-[#353535] text-[#a98892]'}`}
+            onClick={() => markUploaded('selfie')}
+            className="relative flex flex-col items-center justify-center overflow-hidden rounded-[24px] border border-white/5 bg-gradient-to-br from-surface-container-low to-black p-stack-md py-stack-lg shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
           >
-            Continue to Terms
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px] opacity-[0.03]" />
+            <div className="relative flex h-[240px] w-[180px] items-center justify-center overflow-hidden rounded-[100px] border-[3px] border-primary/40 bg-black/40 shadow-[0_0_30px_rgba(255,71,155,0.2)] backdrop-blur-md">
+              <span className="material-symbols-outlined text-[140px] text-white/10" style={{ fontVariationSettings: "'FILL' 1" }}>
+                person
+              </span>
+              {!draft.selfieCompleted ? (
+                <div className="absolute left-0 right-0 z-10 h-[2px] bg-primary shadow-[0_0_10px_#ff479b,0_0_20px_#ff479b] animate-scan" />
+              ) : null}
+            </div>
+            <div className="mt-stack-md flex items-center gap-gutter">
+              <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1">
+                <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_5px_#ffb0ca] animate-pulse" />
+                <span className="font-label-caps text-label-caps text-primary">
+                  {draft.selfieCompleted ? 'SELFIE COMPLETED' : 'FACE DETECTED'}
+                </span>
+              </div>
+            </div>
           </button>
-        </div>
-      </main>
-    </div>
+        </section>
+      </div>
+
+      <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 bg-gradient-to-t from-background via-background/90 to-transparent p-container-margin backdrop-blur-md">
+        <button
+          type="button"
+          disabled={!canContinue}
+          onClick={() => navigate('/kyc/terms')}
+          className={`flex h-14 w-full items-center justify-center gap-2 rounded-full border border-white/5 font-headline-md text-body-lg transition-all ${
+            canContinue
+              ? 'bg-gradient-to-r from-primary-container to-secondary-container text-white shadow-[0_0_20px_rgba(255,71,155,0.3)] hover:shadow-[0_0_30px_rgba(255,71,155,0.6)] active:scale-[0.99]'
+              : 'cursor-not-allowed bg-surface-container-highest text-on-surface-variant opacity-60'
+          }`}
+        >
+          Continue to Terms
+          <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+        </button>
+      </div>
+    </main>
   )
 }

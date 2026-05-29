@@ -19,7 +19,7 @@ export default function KycSuccessPage() {
           </div>
           <h1 className="text-2xl font-bold">Verification Submitted</h1>
           <p className="mt-2 text-sm text-[#a98892]">Your KYC is under review. We have unlocked verified preview state for UI testing.</p>
-          <div className="mt-4"><AdultVerifiedBadge status="verified" /></div>
+          <div className="mt-4"><AdultVerifiedBadge /></div>
           <button onClick={goProfile} className="mt-6 w-full rounded-full bg-gradient-to-r from-[#ff479b] to-[#6e208c] px-4 py-3 text-sm font-semibold text-white">Back to Profile</button>
         </div>
       </main>

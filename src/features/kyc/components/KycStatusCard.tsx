@@ -7,36 +7,113 @@ type Props = {
   className?: string
 }
 
-function statusCopy(status: KycStatus) {
-  if (status === 'verified') return { title: 'Adult Access Enabled', desc: 'Identity confirmed. All restrictions lifted.' }
-  if (status === 'under_review') return { title: 'Review in Progress', desc: 'Your documents are being analyzed.' }
-  if (status === 'rejected') return { title: 'Verification Needs Review', desc: 'Please resubmit with clearer photos.' }
-  return { title: 'Adult Access Locked', desc: 'Verify to unlock 18+ content and features.' }
+const statusContent: Record<KycStatus, { kicker: string; title: string; desc: string; icon: string; cta: string }> = {
+  not_verified: {
+    kicker: 'Variant 1: Action Required',
+    title: 'Adult Access Locked',
+    desc: 'Verify your identity to unlock 18+ content and features.',
+    icon: 'lock',
+    cta: 'Verify Now',
+  },
+  under_review: {
+    kicker: 'Variant 2: Processing',
+    title: 'Review in Progress',
+    desc: 'Your documents are currently being analyzed.',
+    icon: 'hourglass_top',
+    cta: 'View Status',
+  },
+  verified: {
+    kicker: 'Variant 3: Success State',
+    title: 'Adult Access Enabled',
+    desc: 'Identity confirmed. All restrictions lifted.',
+    icon: 'verified',
+    cta: 'View Status',
+  },
+  rejected: {
+    kicker: 'Variant 4: Intervention Needed',
+    title: 'Verification Needs Review',
+    desc: 'Image quality was too low. Please try again.',
+    icon: 'error',
+    cta: 'Resubmit',
+  },
 }
 
 export default function KycStatusCard({ className = '' }: Props) {
   const navigate = useNavigate()
   const status = getKycStatus()
-  const copy = statusCopy(status)
-
-  const cta = status === 'verified' ? 'View Status' : status === 'rejected' ? 'Resubmit' : status === 'under_review' ? 'Check Progress' : 'Verify Now'
+  const copy = statusContent[status]
+  const isVerified = status === 'verified'
+  const isRejected = status === 'rejected'
+  const isReview = status === 'under_review'
 
   return (
-    <div className={`rounded-2xl border border-[#5a3f48]/40 bg-[#1b1b1b]/85 p-4 backdrop-blur-md ${className}`}>
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[15px] font-semibold text-[#e2e2e2]">{copy.title}</h3>
-          <p className="mt-1 text-xs text-[#a98892]">{copy.desc}</p>
+    <div className={`flex flex-col gap-stack-sm ${className}`}>
+      <span className="pl-1 font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">
+        {copy.kicker}
+      </span>
+      <div className="relative">
+        {isVerified ? <div className="pointer-events-none absolute inset-0 rounded-xl bg-primary-container/20 blur-xl animate-subtlePulse" /> : null}
+        {isReview ? (
+          <div className="absolute left-0 top-0 z-20 h-0.5 w-full overflow-hidden rounded-t-xl bg-surface-variant">
+            <div className="h-full w-1/3 rounded-r-full bg-primary-container animate-pulse" />
+          </div>
+        ) : null}
+        <div
+          className={`relative overflow-hidden rounded-xl border bg-surface-container-low transition-all duration-300 ${
+            isVerified
+              ? 'border-primary-container/50 shadow-lg backdrop-blur-sm'
+              : isRejected
+                ? 'border-error/30 hover:border-error/50'
+                : 'border-outline-variant/20 hover:border-outline-variant/50'
+          }`}
+        >
+          <div className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center">
+            <div
+              className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border ${
+                isVerified
+                  ? 'border-primary-container/30 bg-primary-container/10'
+                  : isRejected
+                    ? 'border-error/20 bg-error/10'
+                    : 'border-outline-variant/30 bg-surface'
+              }`}
+            >
+              <span
+                className={`material-symbols-outlined ${
+                  isVerified ? 'text-primary-container' : isRejected ? 'text-error' : isReview ? 'text-secondary' : 'text-on-surface-variant'
+                }`}
+                style={{ fontVariationSettings: isVerified || isRejected ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                {copy.icon}
+              </span>
+            </div>
+            <div className="flex-1">
+              <h3 className={`mb-0.5 font-body-lg text-body-lg font-semibold ${isVerified ? 'text-primary' : 'text-on-surface'}`}>
+                {copy.title}
+              </h3>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">{copy.desc}</p>
+            </div>
+            <div className="w-full flex-shrink-0 sm:w-auto">
+              {isVerified ? (
+                <AdultVerifiedBadge />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate(isRejected ? '/kyc/rejected' : '/kyc')}
+                  className={`w-full rounded-full px-5 py-2.5 font-label-caps text-label-caps font-semibold transition-all duration-200 sm:w-auto ${
+                    isRejected
+                      ? 'border border-outline-variant bg-surface-bright text-on-surface hover:bg-surface-variant hover:text-primary'
+                      : isReview
+                        ? 'border border-outline bg-transparent text-secondary hover:bg-surface-variant/50'
+                        : 'bg-gradient-to-r from-primary-container to-secondary-container text-on-primary shadow-[0_4px_14px_rgba(255,71,155,0.2)] hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(255,71,155,0.3)]'
+                  }`}
+                >
+                  {copy.cta}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-        {status === 'verified' ? <AdultVerifiedBadge status="verified" /> : null}
       </div>
-      <button
-        type="button"
-        onClick={() => navigate(status === 'rejected' ? '/kyc/rejected' : '/kyc')}
-        className="w-full rounded-full bg-gradient-to-r from-[#ff479b] to-[#6e208c] px-4 py-2.5 text-xs font-semibold text-white shadow-[0_4px_18px_rgba(255,71,155,0.35)] transition-all hover:opacity-95 active:scale-[0.99]"
-      >
-        {cta}
-      </button>
     </div>
   )
 }
