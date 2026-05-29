@@ -45,6 +45,7 @@ export default function KycStatusCard({ className = '' }: Props) {
   const isVerified = status === 'verified'
   const isRejected = status === 'rejected'
   const isReview = status === 'under_review'
+  const targetPath = isVerified ? '/kyc/success' : isRejected ? '/kyc/rejected' : '/kyc'
 
   return (
     <div className={`flex flex-col gap-stack-sm ${className}`}>
@@ -61,11 +62,12 @@ export default function KycStatusCard({ className = '' }: Props) {
         <div
           className={`relative overflow-hidden rounded-xl border bg-surface-container-low transition-all duration-300 ${
             isVerified
-              ? 'border-primary-container/50 shadow-lg backdrop-blur-sm'
+              ? 'cursor-pointer border-primary-container/50 shadow-lg backdrop-blur-sm hover:border-primary-container/70'
               : isRejected
                 ? 'border-error/30 hover:border-error/50'
                 : 'border-outline-variant/20 hover:border-outline-variant/50'
           }`}
+          onClick={isVerified ? () => navigate(targetPath) : undefined}
         >
           <div className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center">
             <div
@@ -94,11 +96,17 @@ export default function KycStatusCard({ className = '' }: Props) {
             </div>
             <div className="w-full flex-shrink-0 sm:w-auto">
               {isVerified ? (
-                <AdultVerifiedBadge />
+                <button
+                  type="button"
+                  onClick={() => navigate(targetPath)}
+                  className="rounded-lg transition-transform hover:scale-[1.02] active:scale-[0.99]"
+                >
+                  <AdultVerifiedBadge />
+                </button>
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate(isRejected ? '/kyc/rejected' : '/kyc')}
+                  onClick={() => navigate(targetPath)}
                   className={`w-full rounded-full px-5 py-2.5 font-label-caps text-label-caps font-semibold transition-all duration-200 sm:w-auto ${
                     isRejected
                       ? 'border border-outline-variant bg-surface-bright text-on-surface hover:bg-surface-variant hover:text-primary'
