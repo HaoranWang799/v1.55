@@ -1,19 +1,26 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useL } from '../../../i18n/useL'
 import DocumentUploadBox from '../components/DocumentUploadBox'
-import { KycTopBar } from '../components/KycProgress'
+import KycProgress, { KycTopBar } from '../components/KycProgress'
 import { getKycIdentityDraft, setKycIdentityDraft, uploadKycDocument } from '../mockKycData'
 import type { DocumentType, KycIdentityDraft } from '../types'
 
-const documentOptions: { id: DocumentType; label: string; icon: string }[] = [
-  { id: 'id_card', label: 'ID CARD', icon: 'badge' },
-  { id: 'passport', label: 'PASSPORT', icon: 'menu_book' },
-  { id: 'driver_license', label: 'DRIVER\nLICENSE', icon: 'directions_car' },
-]
+const documentIcons: Record<DocumentType, string> = { id_card: 'badge', passport: 'menu_book', driver_license: 'directions_car' }
+const docTypeKeys: DocumentType[] = ['id_card', 'passport', 'driver_license']
 
 export default function KycIdentityPage() {
   const navigate = useNavigate()
+  const L = useL()
+
+  const documentOptions: { id: DocumentType; label: string; icon: string }[] = [
+    { id: 'id_card', label: L('身份证', 'ID Card'), icon: 'badge' },
+    { id: 'passport', label: L('护照', 'Passport'), icon: 'menu_book' },
+    { id: 'driver_license', label: L('驾驶证', 'Driver License'), icon: 'directions_car' },
+  ]
   const [draft, setDraft] = useState<KycIdentityDraft>(() => getKycIdentityDraft())
+  const [selfieCapturing, setSelfieCapturing] = useState(false)
+  const [uploadingSide, setUploadingSide] = useState<'front' | 'back' | 'passport' | null>(null)
 
   const canContinue = useMemo(() => {
     if (!draft.selfieCompleted) return false
@@ -30,8 +37,20 @@ export default function KycIdentityPage() {
     updateDraft({ ...draft, documentType })
   }
 
+  function retakeDocument(side: 'front' | 'back' | 'passport') {
+    updateDraft({
+      ...draft,
+      frontUploaded: side === 'front' ? false : draft.frontUploaded,
+      backUploaded: side === 'back' ? false : draft.backUploaded,
+      passportUploaded: side === 'passport' ? false : draft.passportUploaded,
+    })
+  }
+
   async function markUploaded(side: 'front' | 'back' | 'passport' | 'selfie') {
+    setUploadingSide(side)
+    await new Promise((r) => setTimeout(r, 800 + Math.random() * 700))
     await uploadKycDocument({ documentType: draft.documentType, side })
+    setUploadingSide(null)
     updateDraft({
       ...draft,
       frontUploaded: side === 'front' ? true : draft.frontUploaded,
@@ -45,12 +64,17 @@ export default function KycIdentityPage() {
     <main className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-[#0D0118] pb-[100px] font-sans text-on-surface">
       <div className="pointer-events-none fixed left-1/2 top-0 z-0 h-[300px] w-full max-w-[480px] -translate-x-1/2 bg-primary-container/10 blur-[100px]" />
       <KycTopBar onBack={() => navigate('/kyc/step1')} />
+      <KycProgress currentStep={2} />
 
       <div className="z-10 flex flex-1 flex-col gap-stack-lg px-container-margin pt-stack-md">
         <section className="flex flex-col gap-stack-sm">
-          <h2 className="font-display-lg text-display-lg text-on-surface">Verify Your Identity</h2>
-          <p className="font-body-sm text-on-surface-variant">Upload a valid document and complete a quick selfie check.</p>
-          <p className="font-chinese-sub text-on-surface-variant/70">请上传有效证件，并完成本人验证。</p>
+          <div className="mb-2 flex w-fit items-center gap-2 rounded-full border border-outline-variant/30 bg-surface-container-high px-3 py-1">
+            <span className="h-2 w-2 rounded-full bg-primary-container shadow-[0_0_6px_rgba(255,71,155,0.6)]" />
+            <span className="font-label-caps text-label-caps text-on-surface-variant">{L('第 2 步 / 共 3 步 · 身份验证', 'Step 2 of 3 · Identity')}</span>
+          </div>
+          <h2 className="font-display-lg text-display-lg text-on-surface">{L('验证您的身份', 'Verify Your Identity')}</h2>
+          <p className="font-body-sm text-on-surface-variant">{L('上传有效证件并完成快速自拍验证。', 'Upload a valid document and complete a quick selfie check.')}</p>
+          <p className="font-chinese-sub text-on-surface-variant/70">{L('请上传有效证件，并完成本人验证。', 'Please upload a valid ID and complete identity verification.')}</p>
         </section>
 
         <section className="flex flex-col gap-stack-md">
@@ -75,7 +99,7 @@ export default function KycIdentityPage() {
                   >
                     {option.icon}
                   </span>
-                  <span className={`whitespace-pre-line px-2 text-center font-label-caps text-label-caps ${active ? 'text-primary' : ''}`}>
+                  <span className={`px-2 text-center font-label-caps text-label-caps ${active ? 'text-primary' : ''}`}>
                     {option.label}
                   </span>
                 </button>
@@ -88,44 +112,89 @@ export default function KycIdentityPage() {
           <div className="grid grid-cols-2 gap-gutter">
             {draft.documentType === 'passport' ? (
               <div className="col-span-2">
-                <DocumentUploadBox label="Passport Photo Page" uploaded={draft.passportUploaded} onUpload={() => markUploaded('passport')} />
+                <DocumentUploadBox
+                  label={L('护照照片页', 'Passport Photo Page')}
+                  uploaded={draft.passportUploaded}
+                  loading={uploadingSide === 'passport'}
+                  onUpload={() => markUploaded('passport')}
+                  onRetake={() => retakeDocument('passport')}
+                />
               </div>
             ) : (
               <>
-                <DocumentUploadBox label="Front Side" uploaded={draft.frontUploaded} onUpload={() => markUploaded('front')} />
-                <DocumentUploadBox label="Back Side" uploaded={draft.backUploaded} onUpload={() => markUploaded('back')} />
+                <DocumentUploadBox
+                  label={L('正面', 'Front Side')}
+                  uploaded={draft.frontUploaded}
+                  loading={uploadingSide === 'front'}
+                  onUpload={() => markUploaded('front')}
+                  onRetake={() => retakeDocument('front')}
+                />
+                <DocumentUploadBox
+                  label={L('背面', 'Back Side')}
+                  uploaded={draft.backUploaded}
+                  loading={uploadingSide === 'back'}
+                  onUpload={() => markUploaded('back')}
+                  onRetake={() => retakeDocument('back')}
+                />
               </>
             )}
           </div>
           <div className="flex items-start gap-stack-sm rounded-lg border border-secondary/20 bg-secondary-container/10 p-stack-sm backdrop-blur-sm">
             <span className="material-symbols-outlined mt-0.5 text-[20px] text-secondary">lightbulb</span>
             <p className="font-chinese-sub text-chinese-sub leading-tight text-secondary/90">
-              Ensure all details are clearly legible. Avoid glare, reflections, and dark shadows. Place the document on a dark, flat surface.
+              {L('请确保所有细节清晰可辨。避免眩光、反光和暗影。将证件放在深色平面上。', 'Ensure all details are clearly legible. Avoid glare, reflections, and dark shadows. Place the document on a dark, flat surface.')}
             </p>
           </div>
         </section>
 
         <section className="flex flex-col gap-stack-md">
-          <h3 className="font-headline-md text-body-lg text-on-surface">Selfie Check</h3>
+          <h3 className="font-headline-md text-body-lg text-on-surface">{L('自拍验证', 'Selfie Check')}</h3>
           <button
             type="button"
-            onClick={() => markUploaded('selfie')}
-            className="relative flex flex-col items-center justify-center overflow-hidden rounded-[24px] border border-white/5 bg-gradient-to-br from-surface-container-low to-black p-stack-md py-stack-lg shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
+            disabled={selfieCapturing}
+            onClick={async () => {
+              if (draft.selfieCompleted) return
+              setSelfieCapturing(true)
+              await new Promise((r) => setTimeout(r, 1800))
+              await markUploaded('selfie')
+              setSelfieCapturing(false)
+            }}
+            className={`relative flex flex-col items-center justify-center overflow-hidden rounded-[24px] border border-white/5 bg-gradient-to-br from-surface-container-low to-black p-stack-md py-stack-lg shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ${
+              selfieCapturing ? 'scale-[0.98] border-primary/30 shadow-[0_0_40px_rgba(255,71,155,0.3)]' : ''
+            } ${draft.selfieCompleted ? '' : 'hover:border-primary/20'}`}
           >
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px] opacity-[0.03]" />
+            {selfieCapturing && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[24px] bg-black/40 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-12 w-12 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="font-label-caps text-label-caps text-primary animate-pulse">{L('拍摄中...', 'Capturing...')}</span>
+                </div>
+              </div>
+            )}
             <div className="relative flex h-[240px] w-[180px] items-center justify-center overflow-hidden rounded-[100px] border-[3px] border-primary/40 bg-black/40 shadow-[0_0_30px_rgba(255,71,155,0.2)] backdrop-blur-md">
               <span className="material-symbols-outlined text-[140px] text-white/10" style={{ fontVariationSettings: "'FILL' 1" }}>
                 person
               </span>
-              {!draft.selfieCompleted ? (
+              {!draft.selfieCompleted && !selfieCapturing && (
                 <div className="absolute left-0 right-0 z-10 h-[2px] bg-primary shadow-[0_0_10px_#ff479b,0_0_20px_#ff479b] animate-scan" />
-              ) : null}
+              )}
             </div>
             <div className="mt-stack-md flex items-center gap-gutter">
-              <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1">
-                <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_5px_#ffb0ca] animate-pulse" />
-                <span className="font-label-caps text-label-caps text-primary">
-                  {draft.selfieCompleted ? 'SELFIE COMPLETED' : 'FACE DETECTED'}
+              <div className={`flex items-center gap-2 rounded-full border px-3 py-1 transition-all duration-300 ${
+                draft.selfieCompleted
+                  ? 'border-primary/50 bg-primary/15'
+                  : selfieCapturing
+                    ? 'border-secondary/40 bg-secondary/10'
+                    : 'border-primary/30 bg-primary/10'
+              }`}>
+                <span className={`h-2 w-2 rounded-full shadow-[0_0_5px_#ffb0ca] ${
+                  draft.selfieCompleted ? 'bg-primary' : selfieCapturing ? 'bg-secondary animate-pulse' : 'bg-primary animate-pulse'
+                }`} />
+                <span className={`font-label-caps text-label-caps ${
+                  draft.selfieCompleted ? 'text-primary' : selfieCapturing ? 'text-secondary' : 'text-primary'
+                }`}>
+                  {draft.selfieCompleted ? L('自拍已验证', 'Selfie Verified') : selfieCapturing ? L('扫描中...', 'Scanning...') : L('点击拍摄', 'Tap to Capture')}
                 </span>
               </div>
             </div>
@@ -144,7 +213,7 @@ export default function KycIdentityPage() {
               : 'cursor-not-allowed bg-surface-container-highest text-on-surface-variant opacity-60'
           }`}
         >
-          Continue to Terms
+          {L('继续到条款', 'Continue to Terms')}
           <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
         </button>
       </div>

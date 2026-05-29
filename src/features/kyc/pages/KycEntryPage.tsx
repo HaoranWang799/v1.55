@@ -1,22 +1,31 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useL } from '../../../i18n/useL'
+import KycProgress, { KycTopBar } from '../components/KycProgress'
 
 export default function KycEntryPage() {
   const navigate = useNavigate()
+  const L = useL()
+  const [showWhy, setShowWhy] = useState(false)
 
   return (
-    <div className="relative flex min-h-[max(884px,100dvh)] flex-col items-center justify-center overflow-hidden bg-background px-container-margin font-body-sm text-on-surface md:mx-auto md:max-w-[480px]">
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden">
-        <div className="absolute -left-10 -top-10 h-[300px] w-[300px] rounded-full bg-primary opacity-10 blur-[100px]" />
-        <div className="absolute -right-10 bottom-10 h-[200px] w-[200px] rounded-full bg-secondary opacity-10 blur-[80px]" />
-      </div>
+    <div className="relative mx-auto min-h-screen max-w-[480px] overflow-hidden bg-background font-body-sm text-on-surface shadow-2xl shadow-black/50">
+      <KycTopBar onBack={() => navigate('/kyc')} />
+      <KycProgress currentStep={1} />
 
-      <main className="relative z-10 flex w-full flex-1 flex-col items-center justify-center space-y-stack-lg py-12">
-        <div className="w-full space-y-stack-sm text-center">
-          <h1 className="font-display-lg text-display-lg text-on-surface">Adult Access Verification</h1>
+      <main className="flex flex-col gap-stack-lg px-container-margin py-stack-lg pb-28">
+        <div className="flex flex-col gap-stack-sm text-center">
+          <div className="mb-2 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-outline-variant/30 bg-surface-container-high px-3 py-1">
+              <span className="h-2 w-2 rounded-full bg-primary-container shadow-[0_0_6px_rgba(255,71,155,0.6)]" />
+              <span className="font-label-caps text-label-caps text-on-surface-variant">{L('第 1 步 / 共 3 步 · 资格确认', 'Step 1 of 3 · Eligibility')}</span>
+            </span>
+          </div>
+          <h1 className="font-display-lg text-display-lg text-on-surface">{L('成人访问验证', 'Adult Access Verification')}</h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            Before entering immersive features, we need to confirm you are 18+ and legally eligible to use this service.
+            {L('进入沉浸式功能前，我们需要确认您已年满 18 岁且符合使用资格。', 'Before entering immersive features, we need to confirm you are 18+ and legally eligible to use this service.')}
           </p>
-          <p className="mt-2 font-chinese-sub text-chinese-sub text-outline-variant">进入沉浸式功能前，请先完成成人身份验证。</p>
+          <p className="mt-2 font-chinese-sub text-chinese-sub text-outline-variant">{L('进入沉浸式功能前，请先完成成人身份验证。', 'Please complete identity verification before accessing immersive features.')}</p>
         </div>
 
         <div className="relative flex w-full flex-col items-center justify-center space-y-stack-md rounded-xl border border-white/10 bg-cyber-gradient p-8 shadow-[0_0_20px_0_rgba(255,45,149,0.3)]">
@@ -32,56 +41,103 @@ export default function KycEntryPage() {
             <div className="flex items-start space-x-3 rounded-lg border border-white/5 bg-surface-container-low p-3">
               <span className="material-symbols-outlined text-secondary">verified_user</span>
               <div>
-                <p className="font-headline-md text-body-sm font-semibold text-on-surface">18+ Only</p>
-                <p className="font-body-sm text-chinese-sub text-on-surface-variant">Restricted access content</p>
+                <p className="font-headline-md text-body-sm font-semibold text-on-surface">{L('仅限 18+', '18+ Only')}</p>
+                <p className="font-body-sm text-chinese-sub text-on-surface-variant">{L('限制级内容访问', 'Restricted access content')}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 rounded-lg border border-white/5 bg-surface-container-low p-3">
               <span className="material-symbols-outlined text-secondary">lock</span>
               <div>
-                <p className="font-headline-md text-body-sm font-semibold text-on-surface">Private &amp; Secure</p>
-                <p className="font-body-sm text-chinese-sub text-on-surface-variant">Data encrypted locally</p>
+                <p className="font-headline-md text-body-sm font-semibold text-on-surface">{L('私密 & 安全', 'Private & Secure')}</p>
+                <p className="font-body-sm text-chinese-sub text-on-surface-variant">{L('数据本地加密', 'Data encrypted locally')}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 rounded-lg border border-white/5 bg-surface-container-low p-3">
               <span className="material-symbols-outlined text-secondary">gavel</span>
               <div>
-                <p className="font-headline-md text-body-sm font-semibold text-on-surface">Compliance Required</p>
-                <p className="font-body-sm text-chinese-sub text-on-surface-variant">Adherence to strict guidelines</p>
+                <p className="font-headline-md text-body-sm font-semibold text-on-surface">{L('合规要求', 'Compliance Required')}</p>
+                <p className="font-body-sm text-chinese-sub text-on-surface-variant">{L('严格遵守准则', 'Adherence to strict guidelines')}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-col space-y-stack-sm pt-4">
+        <div className="flex w-full flex-col space-y-stack-sm">
           <button
             type="button"
             onClick={() => navigate('/kyc/identity')}
             className="flex w-full items-center justify-center space-x-2 rounded-lg bg-gradient-to-r from-[#FF2D95] to-[#9D50BB] py-4 font-headline-md text-headline-md text-on-primary transition-all hover:opacity-90 hover:shadow-[0_0_15px_rgba(255,45,149,0.5)] active:scale-95"
           >
-            <span>I am 18+ · Start Verification</span>
+            <span>{L('我年满 18 岁 · 开始验证', 'I am 18+ · Start Verification')}</span>
             <span className="material-symbols-outlined text-lg">arrow_forward</span>
           </button>
+
+          <div className="flex items-center justify-center gap-4 rounded-xl border border-white/5 bg-surface-container-low px-4 py-3">
+            <div className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px] text-secondary">encrypted</span>
+              <span className="font-label-caps text-[10px] text-on-surface-variant">{L('加密审核', 'Encrypted review')}</span>
+            </div>
+            <div className="h-4 w-px bg-white/10" />
+            <div className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px] text-secondary">schedule</span>
+              <span className="font-label-caps text-[10px] text-on-surface-variant">{L('2–5 分钟', '2–5 min')}</span>
+            </div>
+            <div className="h-4 w-px bg-white/10" />
+            <div className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px] text-secondary">auto_delete</span>
+              <span className="font-label-caps text-[10px] text-on-surface-variant">{L('审核后删除文件', 'Files deleted after review')}</span>
+            </div>
+          </div>
+
           <button
             type="button"
-            className="flex w-full items-center justify-center rounded-lg border border-outline-variant/50 bg-transparent py-3 font-body-sm text-body-sm text-secondary transition-all hover:bg-white/5 active:scale-95"
+            onClick={() => setShowWhy(!showWhy)}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-outline-variant/50 bg-transparent py-2.5 font-body-sm text-body-sm text-secondary transition-all hover:bg-white/5 active:scale-95"
           >
-            <span>Learn Why Verification Is Required</span>
+            <span>{L('了解为何需要验证', 'Learn Why Verification Is Required')}</span>
+            <span className={`material-symbols-outlined text-[16px] transition-transform ${showWhy ? 'rotate-180' : ''}`}>
+              expand_more
+            </span>
           </button>
         </div>
+
+        {showWhy && (
+          <div className="w-full space-y-stack-sm rounded-xl border border-outline-variant/20 bg-surface-container-low p-5 animate-fadeUp">
+            <h3 className="font-headline-md text-body-lg text-on-surface">{L('为什么需要验证', 'Why verification matters')}</h3>
+            <ul className="space-y-stack-sm">
+              <li className="flex items-start gap-2">
+                <span className="material-symbols-outlined mt-0.5 text-[16px] text-primary">gavel</span>
+                <div>
+                  <p className="font-body-sm text-body-sm font-semibold text-on-surface">{L('法律合规', 'Legal Compliance')}</p>
+                  <p className="font-body-sm text-chinese-sub text-on-surface-variant">{L('许多司法管辖区要求面向成人的平台进行年龄验证。', 'Many jurisdictions require age verification for adult-oriented platforms.')}</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="material-symbols-outlined mt-0.5 text-[16px] text-primary">security</span>
+                <div>
+                  <p className="font-body-sm text-body-sm font-semibold text-on-surface">{L('社区安全', 'Community Safety')}</p>
+                  <p className="font-body-sm text-chinese-sub text-on-surface-variant">{L('保护未成年人免受不当内容侵害是我们的首要任务。', 'Protecting minors from accessing inappropriate content is our top priority.')}</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="material-symbols-outlined mt-0.5 text-[16px] text-primary">verified_user</span>
+                <div>
+                  <p className="font-body-sm text-body-sm font-semibold text-on-surface">{L('完整功能访问', 'Full Feature Access')}</p>
+                  <p className="font-body-sm text-chinese-sub text-on-surface-variant">{L('已验证账户可解锁所有沉浸式 AI 伴侣功能。', 'Verified accounts unlock all immersive AI companion capabilities.')}</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        )}
       </main>
 
-      <footer className="relative z-10 mt-auto w-full py-6 text-center">
-        <p className="mx-auto max-w-[80%] font-chinese-sub text-chinese-sub text-outline-variant">
-          By proceeding, you agree to our{' '}
-          <a href="#" className="text-secondary/70 underline hover:text-secondary">
-            Terms of Service
-          </a>{' '}
-          and acknowledge our{' '}
-          <a href="#" className="text-secondary/70 underline hover:text-secondary">
-            Privacy Policy
-          </a>
-          . Verification data is handled securely.
+      <footer className="mx-auto max-w-[80%] py-4 text-center">
+        <p className="font-chinese-sub text-chinese-sub text-outline-variant">
+          {L('继续即表示您同意我们的', 'By proceeding, you agree to our')}{' '}
+          <a href="#" className="text-secondary/70 underline hover:text-secondary">{L('服务条款', 'Terms of Service')}</a>{' '}
+          {L('并确认已知晓我们的', 'and acknowledge our')}{' '}
+          <a href="#" className="text-secondary/70 underline hover:text-secondary">{L('隐私政策', 'Privacy Policy')}</a>
+          {L('。验证数据将安全处理。', '. Verification data is handled securely.')}
         </p>
       </footer>
     </div>

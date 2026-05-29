@@ -6,6 +6,8 @@ export type KycTerm = {
   id: string
   title: string
   desc: string
+  titleZh?: string
+  descZh?: string
   icon: string
 }
 

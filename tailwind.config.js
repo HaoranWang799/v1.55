@@ -85,6 +85,7 @@ export default {
         'body-lg': ['18px', { lineHeight: '28px', fontWeight: '400' }],
         'body-sm': ['14px', { lineHeight: '20px', fontWeight: '400' }],
         'label-caps': ['12px', { lineHeight: '16px', letterSpacing: '0.05em', fontWeight: '600' }],
+        'chinese-sub': ['12px', { lineHeight: '18px', fontWeight: '400' }],
       },
       keyframes: {
         // 角色头像呼吸动画
