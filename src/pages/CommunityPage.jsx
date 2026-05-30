@@ -1045,27 +1045,34 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave, 
             <span className="w-8 text-right text-[9px] tabular-nums text-white/55">{totalTimeStr}</span>
           </div>
 
-          {/* 语音标签 */}
-          {showRealPlayer && (
-            <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#00E676] shadow-[0_0_6px_rgba(0,230,118,0.55)]" />
-              <span className="text-[9px] text-[rgba(0,230,118,0.7)]">
-                {isPresetAudioCard ? L('内容流试听卡', 'Feed Audio Card') : L('AI 预设语音', 'AI Preset Voice')}
-              </span>
+          <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-2">
+            <div className="flex min-w-0 items-center gap-1.5">
+              {showRealPlayer ? (
+                <>
+                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#00E676] shadow-[0_0_6px_rgba(0,230,118,0.55)]" />
+                  <span className="truncate text-[9px] text-[rgba(0,230,118,0.7)]">{L('AI 预设语音', 'AI Preset Voice')}</span>
+                </>
+              ) : (
+                <>
+                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white/35" />
+                  <span className="truncate text-[9px] text-white/42">{L('语音准备中', 'Voice loading')}</span>
+                </>
+              )}
             </div>
-          )}
-        </div>
 
-        {post.templateName && (
-          <button
-            type="button"
-            onClick={onTryTemplate}
-            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#FF9ACB]/35 bg-[#FF4FA3]/18 px-3 py-2 text-[11px] font-semibold text-[#FFD5E7] backdrop-blur-md transition-all hover:bg-[#FF4FA3]/28 active:scale-[0.98]"
-          >
-            <Sparkles size={13} />
-            <span className="truncate">{L('试用同款：', 'Try: ')}{displayTemplateName}</span>
-          </button>
-        )}
+            {post.templateName && (
+              <button
+                type="button"
+                onClick={onTryTemplate}
+                className="inline-flex min-w-0 max-w-[68%] flex-shrink items-center gap-1 rounded-full border border-[#FF9ACB]/25 bg-[#FF4FA3]/12 px-2.5 py-1.5 text-[10px] font-semibold text-[#FFD5E7] transition-all hover:bg-[#FF4FA3]/22 active:scale-[0.98]"
+              >
+                <Sparkles size={11} className="flex-shrink-0" />
+                <span className="truncate">{L('试用同款：', 'Try: ')}{displayTemplateName}</span>
+                <span className="flex-shrink-0 text-[#FFD5E7]/70">›</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="absolute bottom-7 right-4 flex flex-col items-center gap-3">
