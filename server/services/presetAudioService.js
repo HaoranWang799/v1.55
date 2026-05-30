@@ -286,51 +286,6 @@ export async function preparePresetVoiceAudio(presetId, options = {}) {
   return { ok: true, cached: false, script: buildPresetScript(scene, lang, false, character, version) }
 }
 
-export async function listPresetVoiceAudioPackages(options = {}) {
-  const lang = options.lang === 'en' ? 'en' : options.lang === 'all' ? 'all' : 'zh'
-  const pool = await getPool()
-  if (!pool) {
-    return { ok: true, packages: [] }
-  }
-
-  await ensureSchema(pool)
-  const params = []
-  const langFilter = lang === 'all' ? '' : 'AND lang = $1'
-  if (lang !== 'all') params.push(lang)
-
-  const result = await pool.query(
-    `
-      SELECT audio_key, preset_id, lang, file_name, version, script_json, generated_at, updated_at
-      FROM preset_audio_packages
-      WHERE enabled = TRUE
-      ${langFilter}
-      ORDER BY updated_at DESC, preset_id ASC
-    `,
-    params
-  )
-
-  const packages = result.rows
-    .map((record) => {
-      const scene = getPresetVoiceScene(record.preset_id)
-      if (!scene) return null
-      const storedCharacter = getStoredCharacter(record.script_json)
-      const version = Number(record.version) || versionFromFileName(record.file_name)
-      return {
-        audioKey: record.audio_key,
-        presetId: record.preset_id,
-        lang: record.lang,
-        fileName: record.file_name,
-        version,
-        generatedAt: record.generated_at,
-        updatedAt: record.updated_at,
-        script: buildPresetScript(scene, record.lang, true, storedCharacter, version),
-      }
-    })
-    .filter(Boolean)
-
-  return { ok: true, packages }
-}
-
 export async function getPresetVoiceAudioStream(presetId, options = {}) {
   const scene = getPresetVoiceScene(presetId)
   if (!scene) {
