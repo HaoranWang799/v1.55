@@ -1001,11 +1001,23 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave, 
             ) : (
               <Volume2 size={15} className="flex-shrink-0 text-white/38" />
             )}
-            <p className={`min-w-0 flex-1 truncate text-[12px] font-semibold ${
-              audioLoading ? 'text-[#B380FF]' : audioError ? 'text-[rgba(255,150,150,0.7)]' : 'text-white'
-            }`}>
-              {displayLine}
-            </p>
+            {post.templateName ? (
+              <button
+                type="button"
+                onClick={onTryTemplate}
+                className="inline-flex min-w-0 flex-1 items-center gap-1 rounded-full border border-[#FF9ACB]/25 bg-[#FF4FA3]/12 px-3 py-1.5 text-[11px] font-semibold text-[#FFD5E7] transition-all hover:bg-[#FF4FA3]/22 active:scale-[0.98]"
+              >
+                <Sparkles size={12} className="flex-shrink-0" />
+                <span className="truncate">{L('试用同款：', 'Try: ')}{displayTemplateName}</span>
+                <span className="flex-shrink-0 text-[#FFD5E7]/70">›</span>
+              </button>
+            ) : (
+              <span className={`min-w-0 flex-1 truncate text-[12px] font-semibold ${
+                audioLoading ? 'text-[#B380FF]' : audioError ? 'text-[rgba(255,150,150,0.7)]' : 'text-white'
+              }`}>
+                {displayLine}
+              </span>
+            )}
             {/* 音频加载指示器 */}
             {audioLoading && (
               <span className="flex-shrink-0 h-3 w-3 rounded-full border-2 border-[#B380FF] border-t-transparent animate-spin" />
@@ -1043,34 +1055,6 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave, 
               </div>
             )}
             <span className="w-8 text-right text-[9px] tabular-nums text-white/55">{totalTimeStr}</span>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-2">
-            <div className="flex min-w-0 items-center gap-1.5">
-              {showRealPlayer ? (
-                <>
-                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#00E676] shadow-[0_0_6px_rgba(0,230,118,0.55)]" />
-                  <span className="truncate text-[9px] text-[rgba(0,230,118,0.7)]">{L('AI 语音', 'AI Voice')}</span>
-                </>
-              ) : (
-                <>
-                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white/35" />
-                  <span className="truncate text-[9px] text-white/42">{L('语音准备中', 'Voice loading')}</span>
-                </>
-              )}
-            </div>
-
-            {post.templateName && (
-              <button
-                type="button"
-                onClick={onTryTemplate}
-                className="inline-flex min-w-0 max-w-[68%] flex-shrink items-center gap-1 rounded-full border border-[#FF9ACB]/25 bg-[#FF4FA3]/12 px-2.5 py-1.5 text-[10px] font-semibold text-[#FFD5E7] transition-all hover:bg-[#FF4FA3]/22 active:scale-[0.98]"
-              >
-                <Sparkles size={11} className="flex-shrink-0" />
-                <span className="truncate">{L('试用同款：', 'Try: ')}{displayTemplateName}</span>
-                <span className="flex-shrink-0 text-[#FFD5E7]/70">›</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
