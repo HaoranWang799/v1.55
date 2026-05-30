@@ -1134,8 +1134,6 @@ function ExperienceReel({ posts, loading, likesMap, onLike, onTryTemplate, onCom
   if (!feedPosts.length) return null
 
   const activePost = feedPosts[activeIndex] || feedPosts[0]
-  const isPresetCard = activePost.type === 'preset-audio'
-
   return (
     <section
       className="-mx-4 mt-1 min-h-0 flex-1 px-3"
@@ -1152,11 +1150,6 @@ function ExperienceReel({ posts, loading, likesMap, onLike, onTryTemplate, onCom
       }}
     >
       <div className="relative h-full min-h-[360px] overflow-hidden">
-        <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1.5 text-[10px] font-medium text-white/70 backdrop-blur-md">
-          <span className={`h-1.5 w-1.5 rounded-full ${isPresetCard ? 'bg-[#FF9ACB]' : 'bg-[#B380FF]'} shadow-[0_0_8px_currentColor]`} />
-          {isPresetCard ? L('预设语音包混排', 'Preset mixed in') : L('真实体验分享', 'Experience post')}
-          <span className="text-white/35">{activeIndex + 1}/{feedPosts.length}</span>
-        </div>
         <div className="h-full transition-all duration-300 ease-out" key={activePost.id}>
           <ReelSlide
             post={activePost}
