@@ -785,7 +785,48 @@ function formatAudioTime(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave }) {
+function FloatingLoverBar({ onChatWithLover, isChatDisabled }) {
+  const L = useL()
+  const { loading, refreshMessage, text } = useVirtualLover()
+  const displayText = loading && !text
+    ? L('正在靠近你…', 'Coming closer…')
+    : text || L('想让你知道，你一直被惦记着。', 'You are being thought of.')
+
+  return (
+    <div
+      className="absolute left-5 right-[92px] top-[54px] z-10 flex items-center gap-2 rounded-2xl border border-white/12 bg-black/30 px-2.5 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.28)] backdrop-blur-md transition-all active:scale-[0.99]"
+      onClick={(event) => {
+        event.stopPropagation()
+        refreshMessage()
+      }}
+    >
+      <div className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-[rgba(179,128,255,0.22)] text-base">
+        🤖
+        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#B380FF] shadow-[0_0_8px_#B380FF]" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <p className="text-[11px] font-bold leading-none text-white">{L('Luna 在线', 'Luna online')}</p>
+          <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[8px] leading-none text-white/50">{L('固定陪伴', 'Pinned')}</span>
+        </div>
+        <p className="mt-1 truncate text-[10px] leading-none text-white/58">{displayText}</p>
+      </div>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          onChatWithLover()
+        }}
+        disabled={isChatDisabled}
+        className="flex-shrink-0 rounded-full bg-gradient-to-r from-[#FF7DAF] to-[#A87CFF] px-3 py-1.5 text-[10px] font-semibold text-white shadow-[0_0_12px_rgba(179,128,255,0.35)] disabled:opacity-45"
+      >
+        {L('聊聊', 'Chat')}
+      </button>
+    </div>
+  )
+}
+
+function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave, onChatWithLover, isChatDisabled }) {
   const L = useL()
   const { liked, count } = likeState
   const [saved, setSaved] = useState(false)
@@ -905,6 +946,7 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave }
 
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.1)_35%,rgba(0,0,0,0.82)_100%)]" />
       <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/45 to-transparent" />
+      <FloatingLoverBar onChatWithLover={onChatWithLover} isChatDisabled={isChatDisabled} />
 
       <div className="absolute bottom-5 left-4 right-[82px] space-y-3">
         <div className="flex items-center gap-2">
@@ -1045,7 +1087,7 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave }
   )
 }
 
-function ExperienceReel({ posts, loading, likesMap, onLike, onTryTemplate, onComment, onSave }) {
+function ExperienceReel({ posts, loading, likesMap, onLike, onTryTemplate, onComment, onSave, onChatWithLover, isChatDisabled }) {
   const L = useL()
   const [activeIndex, setActiveIndex] = useState(0)
   const touchStartY = useRef(null)
@@ -1116,6 +1158,8 @@ function ExperienceReel({ posts, loading, likesMap, onLike, onTryTemplate, onCom
             onTryTemplate={() => onTryTemplate(activePost)}
             onComment={() => onComment(activePost)}
             onSave={() => onSave(activePost)}
+            onChatWithLover={onChatWithLover}
+            isChatDisabled={isChatDisabled}
           />
         </div>
 
@@ -1534,25 +1578,6 @@ export default function CommunityPage() {
         ))}
       </div>
 
-      {/* ═══ AI 主动关怀卡片（接入 Grok AI）═══════════════════ */}
-      <div className="flex-shrink-0 page-section page-delay-2">
-        <AiLoverCard
-          aiMemoryDeleted={aiMemoryDeleted}
-          onResetMemory={() => setAiMemoryDeleted(false)}
-          onDeleteMemory={() => {
-          if (window.confirm(L('确定删除今晚的记忆吗？此操作不可撤销。', "Delete tonight's memory? This cannot be undone."))) {
-            setAiMemoryDeleted(true)
-            alert(L('🗑️ 记忆已删除', '🗑️ Memory deleted'))
-          }
-          }}
-          onChatWithLover={handleChatWithLover}
-          onRandomExperience={handleRandomExperience}
-          isRandomLoading={isRandomLoading}
-          randomLoadingText={L(RANDOM_LOADING_LINES[loadingLineIdx], RANDOM_LOADING_LINES_EN[loadingLineIdx])}
-          isChatDisabled={aiMemoryDeleted || !currentLover?.id}
-        />
-      </div>
-
       {/* ═══ 加载状态 ════════════════════════════════════════ */}
       {loading && posts.length === 0 && !isExperienceTab && (
         <div className="flex justify-center items-center py-12 page-section page-delay-3">
@@ -1585,6 +1610,8 @@ export default function CommunityPage() {
           onTryTemplate={handleTryTemplate}
           onComment={handleComment}
           onSave={handleSave}
+          onChatWithLover={handleChatWithLover}
+          isChatDisabled={aiMemoryDeleted || !currentLover?.id}
         />
       )}
 
