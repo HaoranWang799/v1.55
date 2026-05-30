@@ -56,6 +56,27 @@ export async function generateScriptAudio(openingLine) {
 }
 
 /**
+ * 自由输入内容池：同一 prompt 第二次直接命中缓存，返回可流式播放的 audioUrl。
+ */
+export async function prepareCustomPromptAudio(prompt, options = {}) {
+  const url = buildApiUrl('/api/scripts/custom-prompt-audio')
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt,
+      lang: options.lang || 'zh',
+      force: Boolean(options.force),
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error?.message || err.error || `自定义语音准备失败 (${res.status})`)
+  }
+  return res.json()
+}
+
+/**
  * 预设语音：16 条固定场景共用同一份缓存音频。
  * 首次请求会由后端生成并写入 Railway Volume，之后直接返回已有音频。
  */

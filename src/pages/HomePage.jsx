@@ -25,8 +25,7 @@ import { SCENES } from '../data/scenes'
 import { SCRIPTS, SCRIPT_DESCRIPTIONS, SCRIPT_DESCRIPTIONS_EN, BG_VIDEO_IDS } from '../data/scripts'
 import { PRESETS, TOTAL_SECONDS, pick, formatTime, generateHearts } from '../data/interactData'
 import {
-  generateScriptText as generateScriptTextApi,
-  generateScriptAudio as generateScriptAudioApi,
+  prepareCustomPromptAudio,
   preparePresetVoiceAudio,
 } from '../api/scripts'
 import { useL } from '../i18n/useL'
@@ -461,10 +460,18 @@ export default function HomePage() {
   const isIntimate  = temperature >= 60
   const tempFull    = temperature >= 100
 
-  // 交互模式显示：自定义剧本用 customDisplayName / customTag，默认用角色字段
-  const displayEmoji = activeScript?.isCustom ? activeScript.cover              : activeChar?.emoji
-  const displayName  = activeScript?.isCustom ? activeScript.customDisplayName  : d(activeChar, 'name')
-  const displayTag   = activeScript?.isCustom ? activeScript.customTag          : d(activeChar, 'tag')
+  // 交互模式显示：AI/内容池剧本优先使用生成结果，普通剧本使用角色字段
+  const displayEmoji = activeScript?.isCustom || activeScript?.isAIGenerated ? activeScript.cover : activeChar?.emoji
+  const displayName  = activeScript?.isCustom
+    ? activeScript.customDisplayName
+    : activeScript?.isAIGenerated
+      ? d(activeScript, 'name')
+      : d(activeChar, 'name')
+  const displayTag   = activeScript?.isCustom
+    ? activeScript.customTag
+    : activeScript?.isAIGenerated
+      ? d(activeScript, 'personalityTag')
+      : d(activeChar, 'tag')
 
   // 场景氛围叠加色（随温度变深）
   const overlayStyle = activeScene
@@ -849,7 +856,7 @@ export default function HomePage() {
     runPresetGeneration(presetId, { force: true })
   }, [generatedScripts, selectedPresetId, runPresetGeneration])
 
-  // ── 自定义剧本生成（B方案：Grok + Fish Audio 两段式进度）────
+  // ── 自定义剧本生成：自由输入接入内容池缓存 ───────────────
   const handleGenerate = useCallback(async () => {
     const prompt = customPrompt.trim()
     if (!prompt) {
@@ -866,31 +873,25 @@ export default function HomePage() {
       return
     }
 
-    // ── 初始化 ───────────────────────────────────────────
     setIsGenerating(true)
     setGeneratedScripts([])
     setGenProgress(0)
     setGenPhase('text')
 
-    // 清理残留计时器
     if (genTimerRef.current) clearInterval(genTimerRef.current)
     if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
     ttsReadyRef.current = false
 
-    // ── Phase 1：等待 LLM，每 1s 涨 10%，上限 28% ───────
     genTimerRef.current = setInterval(() => {
-      setGenProgress(p => {
-        if (p >= 28) { clearInterval(genTimerRef.current); return p }
-        return p + 10
-      })
-    }, 1000)
+      setGenProgress((p) => Math.min(p + 9, 90))
+    }, 350)
 
-    let character
+    let result
     try {
-      const result = await generateScriptTextApi(prompt)
-      character = result.character
+      result = await prepareCustomPromptAudio(prompt, { lang })
     } catch (err) {
       clearInterval(genTimerRef.current)
+      genTimerRef.current = null
       if (phase2bTimerRef.current) clearTimeout(phase2bTimerRef.current)
       setIsGenerating(false)
       setGenPhase(null)
@@ -898,96 +899,39 @@ export default function HomePage() {
       return
     }
 
-    // LLM 完成 → 跳到至少 30%
     clearInterval(genTimerRef.current)
-    setGenProgress(prev => Math.max(prev, 30))
-    setGenPhase('audio')
-
-    // ── Phase 2a：30→90，每 1.8s 涨 10% ─────────────────
-    genTimerRef.current = setInterval(() => {
-      setGenProgress(p => {
-        if (p >= 90) return p
-        const next = Math.min(p + 10, 90)
-        if (next >= 90) {
-          clearInterval(genTimerRef.current)
-          genTimerRef.current = null
-          // 到达 90% 后，out-of-band 决定下一步
-          setTimeout(() => {
-            if (ttsReadyRef.current) {
-              // TTS 已完成 → 直接跳 100%
-              setGenProgress(100)
-              setGenPhase('done')
-            } else {
-              // Phase 2b：2.2s 后涨到 95%，然后停着等 TTS
-              phase2bTimerRef.current = setTimeout(() => {
-                setGenProgress(prev => Math.max(prev, 95))
-              }, 2200)
-            }
-          }, 0)
-        }
-        return next
-      })
-    }, 1800)
-
-    let audioBase64 = null
-    try {
-      const result = await generateScriptAudioApi(character.openingLine)
-      audioBase64 = result.audioBase64
-    } catch (err) {
-      console.warn('TTS 失败，降级无音频:', err.message)
-    }
-
-    // TTS 完成 → 标记 ready，构建卡片，根据当前进度决定是否立即跳 100%
+    genTimerRef.current = null
     ttsReadyRef.current = true
 
     const ts = Date.now()
-    const witchChar  = CHARACTERS.find(c => c.id === 'witch')
-    const knightChar = CHARACTERS.find(c => c.id === 'knight')
+    const baseScript = result.script
     setGeneratedScripts([
       {
-        id:             `ai-${ts}-a`,
-        charId:         'witch',
-        isAIGenerated:  true,
-        isFree:         true,
-        sceneId:        'balcony',
-        cover:          witchChar.emoji,
-        coverEmoji:     witchChar.emoji,
-        tag:            lang === 'en' ? 'AI Generated' : 'AI 生成',
-        downloads:      lang === 'en' ? 'AI Generated' : 'AI 生成',
-        rating:         null,
-        name:           d(witchChar, 'name'),
-        personalityTag: d(witchChar, 'tag'),
-        openingLine:    character.openingLine,
-        gradient:       'from-[#1a0a30] to-[#3a1060]',
-        audioBase64:    audioBase64 || null,
+        ...baseScript,
+        id: `${baseScript.id}-free-${ts}`,
+        charId: 'witch',
+        coverEmoji: baseScript.coverEmoji || '🧙‍♀️',
+        isFree: true,
+        coverImage: baseScript.freeCoverImage,
+        tag: baseScript.cached ? L('已生成', 'Generated') : L('AI定制', 'AI Custom'),
+        downloads: baseScript.cached ? L('内容池', 'Saved') : L('刚刚生成', 'New'),
       },
       {
-        id:             `ai-${ts}-b`,
-        charId:         'knight',
-        isAIGenerated:  true,
-        sceneId:        'balcony',
-        cover:          knightChar.emoji,
-        coverEmoji:     knightChar.emoji,
-        tag:            lang === 'en' ? 'AI Generated' : 'AI 生成',
-        downloads:      lang === 'en' ? 'AI Generated' : 'AI 生成',
-        rating:         null,
-        name:           d(knightChar, 'name'),
-        personalityTag: d(knightChar, 'tag'),
-        openingLine:    character.openingLine,
-        gradient:       'from-[#0d1a3a] to-[#1a3860]',
-        audioBase64:    audioBase64 || null,
+        ...baseScript,
+        id: `${baseScript.id}-vip-${ts}`,
+        charId: 'knight',
+        coverEmoji: '⚔️',
+        isFree: false,
+        coverImage: baseScript.vipCoverImage,
+        tag: L('VIP专属', 'VIP Only'),
+        downloads: baseScript.cached ? L('内容池', 'Saved') : L('刚刚生成', 'New'),
       },
     ])
 
-    // Phase 2a timer 已停（null）→ 进度已 ≥90%，立即跳 100%
-    // Phase 2a 仍在运行 → 它到 90% 时会看到 ttsReadyRef=true，自动跳 100%
-    if (genTimerRef.current === null) {
-      clearTimeout(phase2bTimerRef.current)
-      setGenProgress(100)
-      setGenPhase('done')
-    }
+    setGenProgress(100)
+    setGenPhase('done')
     // isGenerating 保持 true，等用户点"现在进入"按钮后再 false
-  }, [customPrompt, selectedPresetId, promptSugs, lang, runPresetGeneration])
+  }, [customPrompt, selectedPresetId, promptSugs, lang, L, runPresetGeneration])
 
   // ── 定制剧本：点击"开始互动" ──────────────────────────────
   // 根据已选角色 + 场景动态构造脚本对象，复用 enterInteract 逻辑

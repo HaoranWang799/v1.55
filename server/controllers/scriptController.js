@@ -4,6 +4,7 @@
 
 import { createReadStream } from 'fs'
 import { generateScript, generateScriptText, generateScriptAudio } from '../services/scriptService.js'
+import { getCustomPromptAudioStream, prepareCustomPromptAudio } from '../services/customPromptAudioService.js'
 import { getPresetVoiceAudioStream, preparePresetVoiceAudio } from '../services/presetAudioService.js'
 
 function sendAudioFile(req, res, file) {
@@ -81,6 +82,30 @@ export async function streamPresetAudioHandler(req, res, next) {
     const file = await getPresetVoiceAudioStream(req.params.presetId, {
       lang: String(req.query?.lang || 'zh').trim(),
     })
+    sendAudioFile(req, res, file)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function prepareCustomPromptAudioHandler(req, res, next) {
+  try {
+    const prompt = String(req.body?.prompt || '').trim()
+    const apiKeyOverride = String(req.headers['x-grok-api-key'] || '').trim()
+    const result = await prepareCustomPromptAudio(prompt, {
+      lang: String(req.body?.lang || 'zh').trim(),
+      force: Boolean(req.body?.force),
+      apiKeyOverride,
+    })
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function streamCustomPromptAudioHandler(req, res, next) {
+  try {
+    const file = await getCustomPromptAudioStream(req.params.promptHash)
     sendAudioFile(req, res, file)
   } catch (err) {
     next(err)
