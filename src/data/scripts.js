@@ -13,6 +13,7 @@ export const BG_VIDEO_IDS = ['boss', 'balcony', 'neighbor']
 export const SCRIPTS = [
   {
     id: 'boss', charId: 'boss', sceneId: 'office',
+    presetId: 'hot_01',
     cover: '👩‍💼', coverImage: '', coverEmoji: '👩‍💼',
     name: '办公室·冷感女上司',
     nameEn: 'Office · Cold Boss Lady',
@@ -29,6 +30,7 @@ export const SCRIPTS = [
   },
   {
     id: 'junior', charId: 'junior', sceneId: 'dorm',
+    presetId: 'hot_02',
     cover: '🌸', coverImage: '', coverEmoji: '🌸',
     name: '宿舍·温柔学妹',
     nameEn: 'Dorm · Sweet Junior',
@@ -45,6 +47,7 @@ export const SCRIPTS = [
   },
   {
     id: 'teacher', charId: 'teacher', sceneId: 'park',
+    presetId: 'fantasy_03',
     cover: '👩‍🏫', coverImage: '', coverEmoji: '👩‍🏫',
     name: '教室·知性女老师',
     nameEn: 'Classroom · Elegant Teacher',
@@ -61,6 +64,7 @@ export const SCRIPTS = [
   },
   {
     id: 'neighbor', charId: 'neighbor', sceneId: 'balcony',
+    presetId: 'fantasy_01',
     cover: '🌙', coverImage: '', coverEmoji: '🌙',
     name: '阳台·神秘邻居',
     nameEn: 'Balcony · Mysterious Neighbor',

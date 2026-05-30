@@ -1530,7 +1530,7 @@ export default function CommunityPage() {
     <div
       className={
         isExperienceTab
-          ? 'relative flex h-[calc(100dvh-7.5rem)] flex-col gap-4 overflow-hidden px-4 pb-2 pt-4 page-enter'
+          ? 'relative flex h-[calc(100dvh-7.5rem)] flex-col gap-3 overflow-hidden px-4 pb-2 pt-3 page-enter'
           : 'relative space-y-4 px-4 pb-24 pt-4 page-enter'
       }
     >

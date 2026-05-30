@@ -456,7 +456,8 @@ export default function HomePage() {
   const activeChar  = activeScript ? CHARACTERS.find(c => c.id === activeScript.charId) : null
   const activeScene = activeScript ? SCENES.find(s => s.id === activeScript.sceneId)    : null
   // AI 生成模式用 TTS 实际时长，其他模式用固定会话时长
-  const displayTotalSeconds = activeScript?.isAIGenerated ? audioDuration : TOTAL_SECONDS
+  const hasScriptAudio = Boolean(activeScript?.audioBase64 || activeScript?.audioUrl)
+  const displayTotalSeconds = activeScript?.isAIGenerated || hasScriptAudio ? audioDuration : TOTAL_SECONDS
   const isIntimate  = temperature >= 60
   const tempFull    = temperature >= 100
 
@@ -638,11 +639,31 @@ export default function HomePage() {
   }, [view, typeText])
 
   // ── 进入交互模式 ─────────────────────────────────────────
-  const enterInteract = useCallback((script) => {
+  const enterInteract = useCallback(async (script) => {
+    let nextScript = script
+
+    if (script?.presetId && !script.audioUrl && !script.audioBase64) {
+      try {
+        const result = await preparePresetVoiceAudio(script.presetId, { lang })
+        const presetScript = result?.script || {}
+        nextScript = {
+          ...script,
+          presetId: script.presetId,
+          isPresetVoice: true,
+          audioUrl: presetScript.audioUrl || script.audioUrl || '',
+          audioBase64: presetScript.audioBase64 || script.audioBase64 || null,
+          openingLine: presetScript.openingLine || script.openingLine,
+          openingLineEn: presetScript.openingLineEn || script.openingLineEn,
+        }
+      } catch (err) {
+        console.warn(`预设语音加载失败 [${script.presetId}]，降级进入普通互动:`, err.message)
+      }
+    }
+
     // charId 或 sceneId 在 BG_VIDEO_IDS 中时才尝试视频背景，否则直接走图片
-    const useBgVideo = BG_VIDEO_IDS.includes(script.charId) || BG_VIDEO_IDS.includes(script.sceneId)
+    const useBgVideo = BG_VIDEO_IDS.includes(nextScript.charId) || BG_VIDEO_IDS.includes(nextScript.sceneId)
     setBgType(useBgVideo ? 'video' : 'image')
-    setActiveScript(script)
+    setActiveScript(nextScript)
     setTemperature(0)
     setDisplayedText('')
     setIsTyping(false)
@@ -659,11 +680,11 @@ export default function HomePage() {
     setAiFreq(36.8)
     setIsPaused(false)
     // AI 生成的剧本：进入时用开场白作为首屏文字
-    if (script.openingLine && script.isAIGenerated) {
-      pendingOpeningLineRef.current = script.openingLine
+    if (nextScript.openingLine && (nextScript.isAIGenerated || nextScript.isPresetVoice || nextScript.audioUrl || nextScript.audioBase64)) {
+      pendingOpeningLineRef.current = nextScript.openingLine
     }
     setView('interact')
-  }, [])
+  }, [lang])
 
   // ── 返回选择视图 ─────────────────────────────────────────
   const exitInteract = useCallback(() => {
@@ -995,7 +1016,8 @@ export default function HomePage() {
   // ── 交互模式背景音乐（演示版，文件路径：public/audio/demo.mp3）────
   // AI 生成的剧本不播放背景音，只播 TTS 开场白语音
   useEffect(() => {
-    if (view === 'interact' && !activeScript?.isAIGenerated) {
+    const hasRealAudio = Boolean(activeScript?.audioBase64 || activeScript?.audioUrl)
+    if (view === 'interact' && !activeScript?.isAIGenerated && !hasRealAudio) {
       // 进入交互模式：创建音频实例并循环播放
       audioRef.current = new Audio('/audio/demo.mp3')
       audioRef.current.loop = true
@@ -1016,7 +1038,7 @@ export default function HomePage() {
         audioRef.current = null
       }
     }
-  }, [view])
+  }, [view, activeScript?.id, activeScript?.audioBase64, activeScript?.audioUrl, activeScript?.isAIGenerated])
 
   // ── TTS 开场白音频（AI 生成剧本进入互动时播放一次）────────
   useEffect(() => {
