@@ -1050,7 +1050,7 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave, 
               {showRealPlayer ? (
                 <>
                   <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#00E676] shadow-[0_0_6px_rgba(0,230,118,0.55)]" />
-                  <span className="truncate text-[9px] text-[rgba(0,230,118,0.7)]">{L('AI 预设语音', 'AI Preset Voice')}</span>
+                  <span className="truncate text-[9px] text-[rgba(0,230,118,0.7)]">{L('AI 语音', 'AI Voice')}</span>
                 </>
               ) : (
                 <>
