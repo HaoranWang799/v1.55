@@ -1584,6 +1584,22 @@ export default function CommunityPage() {
         </div>
       )}
 
+      {/* ═══ AI 主动关怀卡片：普通列表 tab 保留旧版入口 ═════════════ */}
+      {!isExperienceTab && (
+        <div className="flex-shrink-0 page-section page-delay-2">
+          <AiLoverCard
+            aiMemoryDeleted={aiMemoryDeleted}
+            onResetMemory={() => setAiMemoryDeleted(false)}
+            onDeleteMemory={() => {
+              setAiMemoryDeleted(true)
+              showToast(L('已删除今晚的记忆', "Tonight's memory deleted"))
+            }}
+            onChatWithLover={handleChatWithLover}
+            isChatDisabled={!currentLover?.id}
+          />
+        </div>
+      )}
+
       {/* ═══ 帖子列表 ════════════════════════════════════════ */}
       {posts.length > 0 && isExperienceTab && (
         <ExperienceReel
