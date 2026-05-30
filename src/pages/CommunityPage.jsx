@@ -1045,7 +1045,21 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave, 
             <span className="w-8 text-right text-[9px] tabular-nums text-white/55">{totalTimeStr}</span>
           </div>
 
-          <div className="flex items-center justify-end border-t border-white/10 pt-2">
+          <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-2">
+            <div className="flex min-w-0 items-center gap-1.5">
+              {showRealPlayer ? (
+                <>
+                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#00E676] shadow-[0_0_6px_rgba(0,230,118,0.55)]" />
+                  <span className="truncate text-[9px] text-[rgba(0,230,118,0.7)]">{L('AI 语音', 'AI Voice')}</span>
+                </>
+              ) : (
+                <>
+                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white/35" />
+                  <span className="truncate text-[9px] text-white/42">{L('语音准备中', 'Voice loading')}</span>
+                </>
+              )}
+            </div>
+
             {post.templateName && (
               <button
                 type="button"
