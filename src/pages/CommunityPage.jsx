@@ -1257,64 +1257,8 @@ function AiLoverCard({
 }) {
   const L = useL()
   const { clearMemory, fadeIn, fallback, loading, metaText, mood, provider, refreshMessage, text, timestamp } = useVirtualLover()
-  const [expanded, setExpanded] = useState(false)
 
   const moodStyle = MOOD_STYLES[mood] || MOOD_STYLES['温柔']
-  const displayText = aiMemoryDeleted
-    ? L('记忆已清除，点开重新开始。', 'Memory cleared. Tap to restart.')
-    : loading && !text
-      ? L('思念加载中…', 'Loading thoughts…')
-      : text
-
-  if (!expanded) {
-    return (
-      <div
-        className="flex items-center gap-3 rounded-2xl border border-[#B380FF]/20 bg-[linear-gradient(135deg,rgba(26,16,40,0.92),rgba(37,24,64,0.78))] px-3.5 py-3 shadow-[0_14px_38px_rgba(0,0,0,0.24)] backdrop-blur-md transition-all active:scale-[0.99]"
-        onClick={() => {
-          if (aiMemoryDeleted) onResetMemory()
-          setExpanded(true)
-        }}
-      >
-        <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-[rgba(179,128,255,0.2)] text-xl">
-          🤖
-          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#B380FF] shadow-[0_0_8px_#B380FF]" />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-[12px] font-semibold text-[rgba(245,240,242,0.92)]">{L('Luna 在线', 'Luna online')}</p>
-            <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[8px] text-white/42">{L('可展开', 'Tap')}</span>
-          </div>
-          <p className="mt-0.5 truncate text-[11px] text-[rgba(245,240,242,0.56)]">{displayText || L('点开看看她想说什么。', 'Tap to see what she says.')}</p>
-        </div>
-
-        <div className="flex flex-shrink-0 items-center gap-1.5">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation()
-              onChatWithLover()
-            }}
-            disabled={isChatDisabled || isRandomLoading}
-            className="rounded-full bg-gradient-to-r from-[#FF7DAF] to-[#A87CFF] px-3 py-1.5 text-[10px] font-semibold text-white shadow-[0_0_12px_rgba(179,128,255,0.28)] disabled:opacity-45"
-          >
-            {L('聊聊', 'Chat')}
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation()
-              onRandomExperience()
-            }}
-            disabled={isRandomLoading}
-            className="rounded-full border border-[#B380FF]/28 bg-[rgba(179,128,255,0.1)] px-3 py-1.5 text-[10px] font-semibold text-[#E8DDF1] disabled:opacity-50"
-          >
-            {isRandomLoading ? randomLoadingText : L('随机', 'Random')}
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div
@@ -1336,16 +1280,6 @@ function AiLoverCard({
         <div className="flex-1">
           <p className="text-xs font-semibold text-[rgba(245,240,242,0.9)]">{L('你的虚拟恋人', 'Your AI Lover')}</p>
         </div>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation()
-            setExpanded(false)
-          }}
-          className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[10px] font-medium text-white/50 transition-colors hover:text-white/75"
-        >
-          {L('收起', 'Collapse')}
-        </button>
         {/* 呼吸点 */}
         <span
           className="w-2 h-2 rounded-full flex-shrink-0"
