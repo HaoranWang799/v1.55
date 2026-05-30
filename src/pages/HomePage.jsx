@@ -856,22 +856,9 @@ export default function HomePage() {
     runPresetGeneration(presetId, { force: true })
   }, [generatedScripts, selectedPresetId, runPresetGeneration])
 
-  // ── 自定义剧本生成：自由输入接入内容池缓存 ───────────────
-  const handleGenerate = useCallback(async () => {
-    const prompt = customPrompt.trim()
-    if (!prompt) {
-      alert(L('✨ 请先描述你的幻想场景和角色，让 AI 为你创造专属剧本。', '✨ Please describe your fantasy scene and characters first.'))
-      return
-    }
-
-    const allPresetSuggestions = Object.values(promptSugs).flat()
-    const selectedPreset = allPresetSuggestions.find((s) => s.id === selectedPresetId && s.text === prompt)
-      || allPresetSuggestions.find((s) => s.text === prompt)
-
-    if (selectedPreset?.id) {
-      await runPresetGeneration(selectedPreset.id)
-      return
-    }
+  const runCustomPromptGeneration = useCallback(async (prompt, { force = false } = {}) => {
+    const normalizedPrompt = prompt.trim()
+    if (!normalizedPrompt) return
 
     setIsGenerating(true)
     setGeneratedScripts([])
@@ -888,7 +875,7 @@ export default function HomePage() {
 
     let result
     try {
-      result = await prepareCustomPromptAudio(prompt, { lang })
+      result = await prepareCustomPromptAudio(normalizedPrompt, { lang, force })
     } catch (err) {
       clearInterval(genTimerRef.current)
       genTimerRef.current = null
@@ -931,7 +918,33 @@ export default function HomePage() {
     setGenProgress(100)
     setGenPhase('done')
     // isGenerating 保持 true，等用户点"现在进入"按钮后再 false
-  }, [customPrompt, selectedPresetId, promptSugs, lang, L, runPresetGeneration])
+  }, [lang, L, setGeneratedScripts, setGenPhase, setGenProgress, setIsGenerating, genTimerRef, phase2bTimerRef, ttsReadyRef])
+
+  const handleRetryCustomPromptGenerate = useCallback(() => {
+    const prompt = generatedScripts.find((script) => script.isCustomPrompt && script.sourcePrompt)?.sourcePrompt || customPrompt
+    if (!prompt.trim()) return
+    runCustomPromptGeneration(prompt, { force: true })
+  }, [customPrompt, generatedScripts, runCustomPromptGeneration])
+
+  // ── 自定义剧本生成：自由输入接入内容池缓存 ───────────────
+  const handleGenerate = useCallback(async () => {
+    const prompt = customPrompt.trim()
+    if (!prompt) {
+      alert(L('✨ 请先描述你的幻想场景和角色，让 AI 为你创造专属剧本。', '✨ Please describe your fantasy scene and characters first.'))
+      return
+    }
+
+    const allPresetSuggestions = Object.values(promptSugs).flat()
+    const selectedPreset = allPresetSuggestions.find((s) => s.id === selectedPresetId && s.text === prompt)
+      || allPresetSuggestions.find((s) => s.text === prompt)
+
+    if (selectedPreset?.id) {
+      await runPresetGeneration(selectedPreset.id)
+      return
+    }
+
+    await runCustomPromptGeneration(prompt)
+  }, [customPrompt, selectedPresetId, promptSugs, L, runPresetGeneration, runCustomPromptGeneration])
 
   // ── 定制剧本：点击"开始互动" ──────────────────────────────
   // 根据已选角色 + 场景动态构造脚本对象，复用 enterInteract 逻辑
@@ -1183,7 +1196,13 @@ export default function HomePage() {
                   setIsGenerating(false)
                   setGenPhase(null)
                 }}
-                onRetry={generatedScripts.some((script) => script.isPresetVoice) ? handleRetryPresetGenerate : null}
+                onRetry={
+                  generatedScripts.some((script) => script.isPresetVoice)
+                    ? handleRetryPresetGenerate
+                    : generatedScripts.some((script) => script.isCustomPrompt)
+                      ? handleRetryCustomPromptGenerate
+                      : null
+                }
               />
             )}
 

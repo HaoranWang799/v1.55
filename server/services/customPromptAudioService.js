@@ -42,13 +42,14 @@ async function fileExists(filePath) {
   }
 }
 
-function getStreamUrl(promptHash, lang = 'zh') {
+function getStreamUrl(promptHash, lang = 'zh', version = null) {
   const params = new URLSearchParams()
   if (lang === 'en') params.set('lang', 'en')
+  if (version) params.set('v', String(version))
   return `/api/scripts/custom-prompt-audio/${encodeURIComponent(promptHash)}/stream${params.toString() ? `?${params}` : ''}`
 }
 
-function buildCustomScript({ promptHash, prompt, lang, character, cached }) {
+function buildCustomScript({ promptHash, prompt, lang, character, cached, generatedAt }) {
   return {
     id: `custom-prompt-${promptHash}`,
     contentId: `custom-prompt-${promptHash}`,
@@ -78,8 +79,9 @@ function buildCustomScript({ promptHash, prompt, lang, character, cached }) {
     isAIGenerated: true,
     isCustomPrompt: true,
     isFree: true,
-    audioUrl: getStreamUrl(promptHash, lang),
+    audioUrl: getStreamUrl(promptHash, lang, generatedAt),
     audioCached: cached,
+    generatedAt,
     freeCoverImage: '/images/covers/witch.jpg',
     vipCoverImage: '/images/covers/knight.jpg',
   }
@@ -99,6 +101,7 @@ async function readCachedScript(promptHash, prompt, lang) {
       lang: metadata.lang || lang,
       character: metadata.character,
       cached: true,
+      generatedAt: metadata.generatedAt,
     })
   } catch {
     return null
@@ -132,13 +135,14 @@ export async function prepareCustomPromptAudio(prompt, options = {}) {
   const paths = getFilePaths(promptHash)
   const { character } = await generateScriptText(normalizedPrompt, options.apiKeyOverride || '')
   const audioBase64 = await textToSpeech(character.openingLine)
+  const generatedAt = new Date().toISOString()
   const metadata = {
     cacheVersion: CACHE_VERSION,
     promptHash,
     lang,
     sourcePrompt: normalizedPrompt,
     character,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
   }
 
   await writeFile(paths.audioPath, Buffer.from(audioBase64, 'base64'))
@@ -153,6 +157,7 @@ export async function prepareCustomPromptAudio(prompt, options = {}) {
       lang,
       character,
       cached: false,
+      generatedAt,
     }),
   }
 }
