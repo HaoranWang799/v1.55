@@ -424,6 +424,9 @@ const CHAR_TO_PRESET_MAP = {
   'neighbor': 'hot_03',
   'teacher': 'fantasy_03',
   'witch': 'fantasy_02',
+  'h3': 'fantasy_01',
+  'rb1': 'campus_01',
+  'rb4': 'campus_04',
   'hot_01': 'hot_01',
   'office_03': 'office_03',
   'campus_01': 'campus_01',
@@ -532,6 +535,7 @@ function useExperienceAudio(templateId) {
   const [characterName, setCharacterName] = useState('')
   const mountedRef = useRef(true)
   const fetchedRef = useRef(false)
+  const lastPresetRef = useRef(null)
 
   useEffect(() => {
     mountedRef.current = true
@@ -539,6 +543,14 @@ function useExperienceAudio(templateId) {
   }, [])
 
   useEffect(() => {
+    if (lastPresetRef.current !== presetId) {
+      lastPresetRef.current = presetId
+      fetchedRef.current = false
+      setAudioUrl(null)
+      setOpeningLine('')
+      setCharacterName('')
+      setError(null)
+    }
     if (!presetId || fetchedRef.current) return
     fetchedRef.current = true
     let cancelled = false
@@ -751,7 +763,8 @@ function ReelAction({ icon: Icon, label, active = false, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center gap-1 text-white/80 transition-all active:scale-90"
+      disabled={!onClick}
+      className="flex flex-col items-center gap-1 text-white/80 transition-all active:scale-90 disabled:opacity-45 disabled:active:scale-100"
     >
       <span className={`flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md ${
         active
@@ -863,7 +876,6 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave }
     ? (audioLoading ? L('语音准备中…', 'Preparing voice…') : audioError ? fallbackLine : (openingLine || fallbackLine))
     : fallbackLine
   const showRealPlayer = hasPreset && audioUrl && !audioError
-  const showFakePlayer = !hasPreset || audioError
   const currentTimeStr = showRealPlayer ? formatAudioTime(audioCurrent) : `0:${String(8 + ((Number(post.id) || 1) * 7) % 48).padStart(2, '0')}`
   const totalTimeStr = showRealPlayer ? formatAudioTime(audioDuration) : `1:${String(18 + ((Number(post.id) || 1) * 5) % 38).padStart(2, '0')}`
 
@@ -942,8 +954,10 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave }
               >
                 {isPlaying ? <Pause size={13} /> : <Play size={13} className="ml-0.5" />}
               </button>
-            ) : (
+            ) : hasPreset ? (
               <PlayCircle size={15} className={`flex-shrink-0 ${audioLoading ? 'text-[#B380FF] animate-pulse' : 'text-[#FFB8D7]'}`} />
+            ) : (
+              <Volume2 size={15} className="flex-shrink-0 text-white/38" />
             )}
             <p className={`min-w-0 flex-1 truncate text-[12px] font-semibold ${
               audioLoading ? 'text-[#B380FF]' : audioError ? 'text-[rgba(255,150,150,0.7)]' : 'text-white'
@@ -1025,7 +1039,7 @@ function ReelSlide({ post, likeState, onLike, onTryTemplate, onComment, onSave }
           }}
         />
         <ReelAction icon={Send} label={L('分享', 'Share')} onClick={() => alert(L('分享功能即将开放', 'Share coming soon'))} />
-        <ReelAction icon={Volume2} label={L('试听', 'Audio')} onClick={onTryTemplate} />
+        <ReelAction icon={Volume2} label={showRealPlayer ? L('试听', 'Audio') : L('准备中', 'Loading')} onClick={showRealPlayer ? handlePlayPause : undefined} />
       </div>
     </article>
   )
