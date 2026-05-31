@@ -875,7 +875,11 @@ export default function HomePage() {
 
     let result
     try {
-      result = await prepareCustomPromptAudio(normalizedPrompt, { lang, force })
+      const [customResult] = await Promise.all([
+        prepareCustomPromptAudio(normalizedPrompt, { lang, force }),
+        wait(3500),
+      ])
+      result = customResult
     } catch (err) {
       clearInterval(genTimerRef.current)
       genTimerRef.current = null
@@ -900,8 +904,8 @@ export default function HomePage() {
         coverEmoji: baseScript.coverEmoji || '🧙‍♀️',
         isFree: true,
         coverImage: baseScript.freeCoverImage,
-        tag: baseScript.cached ? L('已生成', 'Generated') : L('AI定制', 'AI Custom'),
-        downloads: baseScript.cached ? L('内容池', 'Saved') : L('刚刚生成', 'New'),
+        tag: L('AI定制', 'AI Custom'),
+        downloads: L('AI定制', 'AI Custom'),
       },
       {
         ...baseScript,
@@ -911,7 +915,7 @@ export default function HomePage() {
         isFree: false,
         coverImage: baseScript.vipCoverImage,
         tag: L('VIP专属', 'VIP Only'),
-        downloads: baseScript.cached ? L('内容池', 'Saved') : L('刚刚生成', 'New'),
+        downloads: L('AI定制', 'AI Custom'),
       },
     ])
 
